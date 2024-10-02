@@ -16,10 +16,12 @@ from PySide6.QtWidgets import (
     QWidget,
     QFileDialog,
     QTableView,
-    QSizePolicy,
+    QHBoxLayout,
+    QListView,
+    QSizePolicy
 )
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import Qt, QAbstractTableModel, QSortFilterProxyModel
+from PySide6.QtCore import Qt, QAbstractTableModel, QSortFilterProxyModel, QStringListModel, QModelIndex
 
 # Project imports
 import analyzer
@@ -94,9 +96,12 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Spell Checking App")
         self.setWindowIcon(QIcon("icon.png"))
 
+        # Data 
+        self.word_entries: dict[str, analyzer.WordEntry] = {}
+
         # Load USFM button
         self.load_usfm_button = QPushButton("Load USFM")
-        self.load_usfm_button.clicked.connect(self.load_usfm)
+        self.load_usfm_button.clicked.connect(self.on_load_usfm)
 
         # Table of words
         table_model = DictionaryTableModel({})
@@ -104,18 +109,32 @@ class MainWindow(QMainWindow):
         self.table_view.setModel(table_model)
         self.table_view.setSortingEnabled(True)
         self.table_view.verticalHeader().setVisible(False)
+        self.table_view.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding))
+        self.table_view.clicked.connect(self.on_table_cell_clicked)
 
-        # Create layout
-        layout = QVBoxLayout()
-        layout.addWidget(self.load_usfm_button)
-        layout.addWidget(self.table_view)
+        # List of references
+        list_model = QStringListModel()
+        list_model.setStringList([])
+        self.reference_list_view = QListView()
+        self.reference_list_view.setModel(list_model)
 
+        # Create left pane layout
+        left_pane_layout = QVBoxLayout()
+        left_pane_layout.addWidget(self.load_usfm_button)
+        left_pane_layout.addWidget(self.table_view)
+
+        # Create horizontal panes layout
+        horizontal_panes_layout = QHBoxLayout()
+        horizontal_panes_layout.addLayout(left_pane_layout)
+        horizontal_panes_layout.addWidget(self.reference_list_view)
+
+        # Create central widget
         central_widget = QWidget(self)
-        central_widget.setLayout(layout)
+        central_widget.setLayout(horizontal_panes_layout)
 
         self.setCentralWidget(central_widget)
 
-    def load_usfm(self) -> None:
+    def on_load_usfm(self) -> None:
         """Load a USFM file or directory."""
 
         # Ask user for directory
@@ -132,14 +151,19 @@ class MainWindow(QMainWindow):
         path = Path(directory)
 
         # To do: Run this in a thread so we don't block the UI
-        word_entries = analyzer.process_file_or_dir(path)
+        self.word_entries = analyzer.process_file_or_dir(path)
 
         # Update data model
-        table_model = DictionaryTableModel(word_entries)
+        table_model = DictionaryTableModel(self.word_entries)
         proxy_table_model = QSortFilterProxyModel()
         proxy_table_model.setSourceModel(table_model)
         proxy_table_model.sort(1, order=Qt.DescendingOrder)
         self.table_view.setModel(proxy_table_model)
+
+    def on_table_cell_clicked(self, index: QModelIndex):
+        row = index.row()
+        word = self.table_view.model().index(row,0).data()
+        logging.debug("row: %s word: %s", row, word)
 
 
 def main() -> None:  # pragma: no cover
