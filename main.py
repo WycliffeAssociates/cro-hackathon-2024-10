@@ -102,6 +102,8 @@ class MainWindow(QMainWindow):
         table_model = DictionaryTableModel({})
         self.table_view = QTableView()
         self.table_view.setModel(table_model)
+        self.table_view.setSortingEnabled(True)
+        self.table_view.verticalHeader().setVisible(False)
 
         # Create layout
         layout = QVBoxLayout()
@@ -136,9 +138,8 @@ class MainWindow(QMainWindow):
         table_model = DictionaryTableModel(word_entries)
         proxy_table_model = QSortFilterProxyModel()
         proxy_table_model.setSourceModel(table_model)
-        self.table_view.setModel(proxy_table_model)
-        self.table_view.setSortingEnabled(True)
         proxy_table_model.sort(1, order=Qt.DescendingOrder)
+        self.table_view.setModel(proxy_table_model)
 
 
 def main() -> None:  # pragma: no cover
