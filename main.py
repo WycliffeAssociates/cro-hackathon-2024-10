@@ -163,7 +163,11 @@ class MainWindow(QMainWindow):
     def on_table_cell_clicked(self, index: QModelIndex):
         row = index.row()
         word = self.table_view.model().index(row,0).data()
-        logging.debug("row: %s word: %s", row, word)
+        word_entry = self.word_entries[word]
+        strings = [f"{ref.book} {ref.chapter}:{ref.verse}" for ref in word_entry.refs]
+        list_model = QStringListModel()
+        list_model.setStringList(strings)
+        self.reference_list_view.setModel(list_model)
 
 
 def main() -> None:  # pragma: no cover
