@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
 )
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import Qt, QAbstractTableModel
+from PySide6.QtCore import Qt, QAbstractTableModel, QSortFilterProxyModel
 
 # Project imports
 import analyzer
@@ -99,9 +99,9 @@ class MainWindow(QMainWindow):
         self.load_usfm_button.clicked.connect(self.load_usfm)
 
         # Table of words
-        self.table_model = DictionaryTableModel({})
+        table_model = DictionaryTableModel({})
         self.table_view = QTableView()
-        self.table_view.setModel(self.table_model)
+        self.table_view.setModel(table_model)
 
         # Create layout
         layout = QVBoxLayout()
@@ -129,10 +129,16 @@ class MainWindow(QMainWindow):
 
         path = Path(directory)
 
-        # To do: Run this in a thread
+        # To do: Run this in a thread so we don't block the UI
         word_entries = analyzer.process_file_or_dir(path)
-        self.table_model = DictionaryTableModel(word_entries)
-        self.table_view.setModel(self.table_model)
+
+        # Update data model
+        table_model = DictionaryTableModel(word_entries)
+        proxy_table_model = QSortFilterProxyModel()
+        proxy_table_model.setSourceModel(table_model)
+        self.table_view.setModel(proxy_table_model)
+        self.table_view.setSortingEnabled(True)
+        proxy_table_model.sort(1, order=Qt.DescendingOrder)
 
 
 def main() -> None:  # pragma: no cover
