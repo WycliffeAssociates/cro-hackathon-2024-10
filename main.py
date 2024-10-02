@@ -18,10 +18,16 @@ from PySide6.QtWidgets import (
     QTableView,
     QHBoxLayout,
     QListView,
-    QSizePolicy
+    QSizePolicy,
 )
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import Qt, QAbstractTableModel, QSortFilterProxyModel, QStringListModel, QModelIndex
+from PySide6.QtCore import (
+    Qt,
+    QAbstractTableModel,
+    QSortFilterProxyModel,
+    QStringListModel,
+    QModelIndex,
+)
 
 # Project imports
 import analyzer
@@ -96,7 +102,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Spell Checking App")
         self.setWindowIcon(QIcon("icon.png"))
 
-        # Data 
+        # Data
         self.word_entries: dict[str, analyzer.WordEntry] = {}
 
         # Load USFM button
@@ -109,7 +115,9 @@ class MainWindow(QMainWindow):
         self.table_view.setModel(table_model)
         self.table_view.setSortingEnabled(True)
         self.table_view.verticalHeader().setVisible(False)
-        self.table_view.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding))
+        self.table_view.setSizePolicy(
+            QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        )
         self.table_view.clicked.connect(self.on_table_cell_clicked)
 
         # List of references
@@ -162,7 +170,7 @@ class MainWindow(QMainWindow):
 
     def on_table_cell_clicked(self, index: QModelIndex):
         row = index.row()
-        word = self.table_view.model().index(row,0).data()
+        word = self.table_view.model().index(row, 0).data()
         word_entry = self.word_entries[word]
         strings = [f"{ref.book} {ref.chapter}:{ref.verse}" for ref in word_entry.refs]
         list_model = QStringListModel()
