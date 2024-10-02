@@ -6,10 +6,16 @@ run: .venv
 run-trace: .venv
 	. .venv/bin/activate && python3 main.py --trace
 
-.PHONY: lint
-lint: .venv
+.PHONY: mypy
+mypy: .venv
 	. .venv/bin/activate && python3 -m mypy --strict *.py 
+
+.PHONY: pylint
+pylint: .venv
 	. .venv/bin/activate && python3 -m pylint --output-format=colorized *.py 
+
+.PHONY: lint
+lint: .venv mypy lint
 
 .PHONY: test
 test: .venv

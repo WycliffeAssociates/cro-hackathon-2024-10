@@ -5,6 +5,7 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 import logging
 import sys
+from typing import Any
 
 # Third party imports
 from PySide6.QtWidgets import (
@@ -14,7 +15,11 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QFileDialog,
+    QTableView,
+    QSizePolicy,
 )
+from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt, QAbstractTableModel
 
 # Project imports
 import analyzer
@@ -50,35 +55,34 @@ def setup_logging(trace: bool) -> None:  # pragma: no cover
     )
 
 
-# class DictionaryTableModel(QAbstractTableModel):
-#     def __init__(self, data_dict):
-#         super().__init__()
-#         self.data_dict = data_dict
-#         self.keys = list(self.data_dict.keys())
-#         self.columns = ["Word", "Count"]
+class DictionaryTableModel(QAbstractTableModel):
+    def __init__(self, data_dict: dict[str, analyzer.WordEntry]):
+        super().__init__()
+        self.data_dict = data_dict
+        self.keys = list(self.data_dict.keys())
+        self.columns = ["Word", "Count"]
 
-#     def rowCount(self, parent=None):
-#         return len(self.data_dict)
+    def rowCount(self, parent=None) -> int:
+        return len(self.data_dict)
 
-#     def columnCount(self, parent=None):
-#         return len(self.columns)
+    def columnCount(self, parent=None) -> int:
+        return len(self.columns)
 
-#     def data(self, index, role=Qt.DisplayRole):
-#         if role == Qt.DisplayRole:
-#             key = self.keys[index.row()]
-#             if index.column() == 0:  # First column displays keys
-#                 return key
-#             elif index.column() == 1:  # Second column displays values
-#                 return str(self.data_dict[key])
-#         return None
+    def data(self, index, role=Qt.DisplayRole) -> Any:
+        if role == Qt.DisplayRole:
+            key = self.keys[index.row()]
+            if index.column() == 0:  # First column displays keys
+                return key
+            if index.column() == 1:  # Second column displays values
+                return len(self.data_dict[key].refs)
+        return None
 
-#     def headerData(self, section, orientation, role=Qt.DisplayRole):
-#         if role == Qt.DisplayRole:
-#             if orientation == Qt.Horizontal:
-#                 return self.columns[section]
-#             else:
-#                 return str(section)
-#         return None
+    def headerData(self, section, orientation, role=Qt.DisplayRole) -> str:
+        if role == Qt.DisplayRole:
+            if orientation == Qt.Horizontal:
+                return self.columns[section]
+            return str(section)
+        return None
 
 
 class MainWindow(QMainWindow):
@@ -88,12 +92,21 @@ class MainWindow(QMainWindow):
         """Initialize main window."""
         super().__init__()
         self.setWindowTitle("Spell Checking App")
+        self.setWindowIcon(QIcon("icon.png"))
 
+        # Load USFM button
         self.load_usfm_button = QPushButton("Load USFM")
         self.load_usfm_button.clicked.connect(self.load_usfm)
 
+        # Table of words
+        self.table_model = DictionaryTableModel({})
+        self.table_view = QTableView()
+        self.table_view.setModel(self.table_model)
+
+        # Create layout
         layout = QVBoxLayout()
         layout.addWidget(self.load_usfm_button)
+        layout.addWidget(self.table_view)
 
         central_widget = QWidget(self)
         central_widget.setLayout(layout)
@@ -116,8 +129,10 @@ class MainWindow(QMainWindow):
 
         path = Path(directory)
 
-        # TODO: Run this in a thread
-        analyzer.process_file_or_dir(path)
+        # To do: Run this in a thread
+        word_entries = analyzer.process_file_or_dir(path)
+        self.table_model = DictionaryTableModel(word_entries)
+        self.table_view.setModel(self.table_model)
 
 
 def main() -> None:  # pragma: no cover
