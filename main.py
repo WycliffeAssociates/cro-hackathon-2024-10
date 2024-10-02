@@ -2,6 +2,7 @@
 
 # Standard imports
 from argparse import ArgumentParser, Namespace
+from pathlib import Path
 import logging
 import sys
 
@@ -12,9 +13,11 @@ from PySide6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
     QWidget,
+    QFileDialog,
 )
 
 # Project imports
+import analyzer
 
 
 def parse_args() -> Namespace:  # pragma: no cover
@@ -79,7 +82,7 @@ def setup_logging(trace: bool) -> None:  # pragma: no cover
 
 
 class MainWindow(QMainWindow):
-    """ Main Window """
+    """Main Window"""
 
     def __init__(self) -> None:
         """Initialize main window."""
@@ -98,8 +101,19 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
     def load_usfm(self) -> None:
-        """ Load a USFM file or directory. """
-        logging.debug("Hello!")
+        """Load a USFM file or directory."""
+
+        # Ask user for directory
+        directory = QFileDialog.getExistingDirectory(self)
+
+        # Abort if canceled
+        if not directory:
+            return
+
+        path = Path(directory)
+
+        # TODO: Run this in a thread
+        analyzer.process_file_or_dir(path)
 
 
 def main() -> None:  # pragma: no cover
