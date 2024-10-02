@@ -8,8 +8,8 @@ run-trace: .venv
 
 .PHONY: lint
 lint: .venv
-	. .venv/bin/activate && python3 -m mypy --strict *.py **/*.py
-	. .venv/bin/activate && python3 -m pylint --output-format=colorized *.py **/*.py
+	. .venv/bin/activate && python3 -m mypy --strict *.py 
+	. .venv/bin/activate && python3 -m pylint --output-format=colorized *.py 
 
 .PHONY: test
 test: .venv
@@ -24,7 +24,7 @@ edit:
 
 .PHONY: format
 format: .venv
-	. .venv/bin/activate && python -m black *.py **/*.py
+	. .venv/bin/activate && python -m black *.py
 	pandoc readme.md --from markdown --to markdown --output readme.md
 
 .venv: requirements.txt

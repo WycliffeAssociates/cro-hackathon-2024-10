@@ -4,9 +4,15 @@
 from argparse import ArgumentParser, Namespace
 import logging
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget
-from PySide6.QtGui import QPalette, QColor
+
 # Third party imports
+from PySide6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 # Project imports
 
@@ -40,12 +46,61 @@ def setup_logging(trace: bool) -> None:  # pragma: no cover
         level=logging_level,
     )
 
+
+# class DictionaryTableModel(QAbstractTableModel):
+#     def __init__(self, data_dict):
+#         super().__init__()
+#         self.data_dict = data_dict
+#         self.keys = list(self.data_dict.keys())
+#         self.columns = ["Word", "Count"]
+
+#     def rowCount(self, parent=None):
+#         return len(self.data_dict)
+
+#     def columnCount(self, parent=None):
+#         return len(self.columns)
+
+#     def data(self, index, role=Qt.DisplayRole):
+#         if role == Qt.DisplayRole:
+#             key = self.keys[index.row()]
+#             if index.column() == 0:  # First column displays keys
+#                 return key
+#             elif index.column() == 1:  # Second column displays values
+#                 return str(self.data_dict[key])
+#         return None
+
+#     def headerData(self, section, orientation, role=Qt.DisplayRole):
+#         if role == Qt.DisplayRole:
+#             if orientation == Qt.Horizontal:
+#                 return self.columns[section]
+#             else:
+#                 return str(section)
+#         return None
+
+
 class MainWindow(QMainWindow):
+    """ Main Window """
 
     def __init__(self) -> None:
-        """ Initialize main window. """
+        """Initialize main window."""
         super().__init__()
         self.setWindowTitle("Spell Checking App")
+
+        self.load_usfm_button = QPushButton("Load USFM")
+        self.load_usfm_button.clicked.connect(self.load_usfm)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.load_usfm_button)
+
+        central_widget = QWidget(self)
+        central_widget.setLayout(layout)
+
+        self.setCentralWidget(central_widget)
+
+    def load_usfm(self) -> None:
+        """ Load a USFM file or directory. """
+        logging.debug("Hello!")
+
 
 def main() -> None:  # pragma: no cover
     """Main function"""
@@ -53,10 +108,8 @@ def main() -> None:  # pragma: no cover
     setup_logging(args.trace)
 
     app = QApplication(sys.argv)
-
     window = MainWindow()
     window.show()
-
     app.exec()
 
 
