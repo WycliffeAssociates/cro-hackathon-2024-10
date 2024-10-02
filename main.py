@@ -104,7 +104,11 @@ class MainWindow(QMainWindow):
         """Load a USFM file or directory."""
 
         # Ask user for directory
-        directory = QFileDialog.getExistingDirectory(self)
+        directory = QFileDialog.getExistingDirectory(
+            self,
+            "Select USFM Directory",
+            dir="/home/oliverc/repos/en_ulb_WycliffeAssociates",
+        )
 
         # Abort if canceled
         if not directory:
