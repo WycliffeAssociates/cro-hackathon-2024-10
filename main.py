@@ -231,6 +231,7 @@ class MainWindow(QMainWindow):
         self.references.setHtml("".join(html_refs))
 
     def on_push_changes_clicked(self):
+
         command = ["git", "add", "--all"]
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode != 0:
@@ -238,6 +239,7 @@ class MainWindow(QMainWindow):
             return
         logging.debug("Success: %s", str(command))
         logging.debug("%s", result.stdout)
+
         command = ["git", "commit", "-m", "Correct spelling"]
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode != 0:
@@ -245,6 +247,7 @@ class MainWindow(QMainWindow):
             return
         logging.debug("Success: %s", str(command))
         logging.debug("%s", result.stdout)
+
         command = ["git", "push"]
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode != 0:
