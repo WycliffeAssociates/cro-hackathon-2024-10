@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QSizePolicy,
     QTextEdit,
+    QMessageBox,
+    QInputDialog,
 )
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import (
@@ -145,6 +147,7 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(horizontal_panes_layout)
 
         self.setCentralWidget(central_widget)
+        self.resize(800, 600)
 
     def on_load_usfm(self) -> None:
         """Load a USFM file or directory."""
@@ -153,7 +156,7 @@ class MainWindow(QMainWindow):
         directory = QFileDialog.getExistingDirectory(
             self,
             "Select USFM Directory",
-            dir="/home/oliverc/repos/en_ulb_WycliffeAssociates",
+            dir="/home/oliverc/repos/en_ulb_craig",
         )
 
         # Abort if canceled
@@ -176,6 +179,7 @@ class MainWindow(QMainWindow):
         """When the user clicks a cell, show its references"""
         row = index.row()
         word = self.table_view.model().index(row, 0).data()
+        self.table_view.selectRow(row)
         word_entry = self.word_entries[word]
         html_refs = []
         for ref in word_entry.refs:
@@ -190,12 +194,21 @@ class MainWindow(QMainWindow):
         """Fix spelling of selected word."""
         selected_indexes = self.table_view.selectedIndexes()
         if not selected_indexes:
-            logging.debug("User clicked button but no row selected!")
+            error_dialog = QMessageBox()
+            error_dialog.warning(
+                None, "Select Word", "Please select a word to correct."
+            )
+            error_dialog.setFixedSize(500, 200)
             return
         row = selected_indexes[0].row()
-        logging.debug("User selected row %d", row)
         word = self.table_view.model().index(row, 0).data()
-        logging.debug("User selected word %s", word)
+        text, ok = QInputDialog.getText(
+            None,
+            "Correct Spelling",
+            f"Please provide the correct spelling of the word '{word}'",
+        )
+        if ok and text:
+            logging.warning("OK")
 
 
 def main() -> None:  # pragma: no cover
