@@ -232,8 +232,10 @@ class MainWindow(QMainWindow):
 
     def on_push_changes_clicked(self):
 
+        repo_dir = str(self.path)
+
         command = ["git", "add", "--all"]
-        result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(command, capture_output=True, text=True, cwd=repo_dir)
         if result.returncode != 0:
             logging.warning("Return code %i: %s", result.returncode, str(command))
             return
@@ -242,7 +244,7 @@ class MainWindow(QMainWindow):
         logging.debug("%s", result.stderr)
 
         command = ["git", "commit", "-m", "Correct spelling"]
-        result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(command, capture_output=True, text=True, cwd=repo_dir)
         if result.returncode != 0:
             logging.warning("Return code %i: %s", result.returncode, str(command))
             return
@@ -251,7 +253,7 @@ class MainWindow(QMainWindow):
         logging.debug("%s", result.stderr)
 
         command = ["git", "push"]
-        result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(command, capture_output=True, text=True, cwd=repo_dir)
         if result.returncode != 0:
             logging.warning("Return code %i: %s", result.returncode, str(command))
             return
