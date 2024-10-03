@@ -30,6 +30,7 @@ class VerseReference:
     book: str
     chapter: int
     verse: int
+    text: str
 
     def __str__(self) -> str:
         """Return a string representation of the verse reference, e.g., 'Genesis 1:6'"""
@@ -116,6 +117,7 @@ def process_file(path: Path) -> dict[str, WordEntry]:
             line = FOOTNOTE_REGEX.sub(" ", line)
             line = USFM_MARKER_REGEX.sub(" ", line)
             line = NUMBER_REGEX.sub(" ", line)
+            text = line
             line = PUNCTUATION_REGEX.sub(" ", line)
             line = line.strip()
             if len(line) == 0:
@@ -128,7 +130,7 @@ def process_file(path: Path) -> dict[str, WordEntry]:
                 if len(word) == 0:
                     continue
                 verse_ref = VerseReference(
-                    current_book, int(current_chapter), int(current_verse)
+                    current_book, int(current_chapter), int(current_verse), text
                 )
 
                 # If new word, create entry for it

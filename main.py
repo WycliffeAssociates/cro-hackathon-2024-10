@@ -172,7 +172,7 @@ class MainWindow(QMainWindow):
         row = index.row()
         word = self.table_view.model().index(row, 0).data()
         word_entry = self.word_entries[word]
-        strings = [f"{ref.book} {ref.chapter}:{ref.verse}" for ref in word_entry.refs]
+        strings = [f"{ref.book} {ref.chapter}:{ref.verse} {ref.text}" for ref in word_entry.refs]
         list_model = QStringListModel()
         list_model.setStringList(strings)
         self.reference_list_view.setModel(list_model)
