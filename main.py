@@ -133,11 +133,16 @@ class MainWindow(QMainWindow):
         self.fix_spelling_button = QPushButton("Fix Spelling")
         self.fix_spelling_button.clicked.connect(self.on_fix_spelling_clicked)
 
+        # Fix Spelling button
+        self.push_changes_button = QPushButton("Push changes")
+        self.push_changes_button.clicked.connect(self.on_push_changes_clicked)
+
         # Create left pane layout
         left_pane_layout = QVBoxLayout()
         left_pane_layout.addWidget(self.load_usfm_button)
         left_pane_layout.addWidget(self.table_view)
         left_pane_layout.addWidget(self.fix_spelling_button)
+        left_pane_layout.addWidget(self.push_changes_button)
 
         # Create horizontal panes layout
         horizontal_panes_layout = QHBoxLayout()
@@ -224,6 +229,26 @@ class MainWindow(QMainWindow):
             )
             html_refs.append(text)
         self.references.setHtml("".join(html_refs))
+
+    def on_push_changes_clicked(self):
+        command = ["git", "add", "--all"]
+        result = subprocess.run(command, capture_output=True, text=True)
+        if result.returncode != 0:
+            logging.warning("Return code %i: %s", result.returncode, str(command))
+            return
+        logging.debug("Success: %s", str(command))
+        command = ["git", "commit", "-m", "Correct spelling"]
+        result = subprocess.run(command, capture_output=True, text=True)
+        if result.returncode != 0:
+            logging.warning("Return code %i: %s", result.returncode, str(command))
+            return
+        logging.debug("Success: %s", str(command))
+        command = ["git", "push"]
+        result = subprocess.run(command, capture_output=True, text=True)
+        if result.returncode != 0:
+            logging.warning("Return code %i: %s", result.returncode, str(command))
+            return
+        logging.debug("Success: %s", str(command))
 
 
 def main() -> None:  # pragma: no cover
