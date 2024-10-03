@@ -237,18 +237,21 @@ class MainWindow(QMainWindow):
             logging.warning("Return code %i: %s", result.returncode, str(command))
             return
         logging.debug("Success: %s", str(command))
+        logging.debug("%s", result.stdout)
         command = ["git", "commit", "-m", "Correct spelling"]
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode != 0:
             logging.warning("Return code %i: %s", result.returncode, str(command))
             return
         logging.debug("Success: %s", str(command))
+        logging.debug("%s", result.stdout)
         command = ["git", "push"]
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode != 0:
             logging.warning("Return code %i: %s", result.returncode, str(command))
             return
         logging.debug("Success: %s", str(command))
+        logging.debug("%s", result.stdout)
 
 
 def main() -> None:  # pragma: no cover
