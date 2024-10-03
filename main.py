@@ -17,15 +17,14 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QTableView,
     QHBoxLayout,
-    QListView,
     QSizePolicy,
+    QTextEdit
 )
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import (
     Qt,
     QAbstractTableModel,
     QSortFilterProxyModel,
-    QStringListModel,
     QModelIndex,
 )
 
@@ -64,16 +63,17 @@ def setup_logging(trace: bool) -> None:  # pragma: no cover
 
 
 class DictionaryTableModel(QAbstractTableModel):
+    """ Provides a data model that maps WordEntries to a table """
     def __init__(self, data_dict: dict[str, analyzer.WordEntry]):
         super().__init__()
         self.data_dict = data_dict
         self.keys = list(self.data_dict.keys())
         self.columns = ["Word", "Count"]
 
-    def rowCount(self, parent=None) -> int:
+    def rowCount(self, parent=None) -> int: # pylint: disable=unused-argument
         return len(self.data_dict)
 
-    def columnCount(self, parent=None) -> int:
+    def columnCount(self, parent=None) -> int: # pylint: disable=unused-argument
         return len(self.columns)
 
     def data(self, index, role=Qt.DisplayRole) -> Any:
@@ -121,10 +121,8 @@ class MainWindow(QMainWindow):
         self.table_view.clicked.connect(self.on_table_cell_clicked)
 
         # List of references
-        list_model = QStringListModel()
-        list_model.setStringList([])
-        self.reference_list_view = QListView()
-        self.reference_list_view.setModel(list_model)
+        self.references = QTextEdit()
+        self.references.setReadOnly(True)
 
         # Create left pane layout
         left_pane_layout = QVBoxLayout()
@@ -134,7 +132,7 @@ class MainWindow(QMainWindow):
         # Create horizontal panes layout
         horizontal_panes_layout = QHBoxLayout()
         horizontal_panes_layout.addLayout(left_pane_layout)
-        horizontal_panes_layout.addWidget(self.reference_list_view)
+        horizontal_panes_layout.addWidget(self.references)
 
         # Create central widget
         central_widget = QWidget(self)
@@ -169,13 +167,18 @@ class MainWindow(QMainWindow):
         self.table_view.setModel(proxy_table_model)
 
     def on_table_cell_clicked(self, index: QModelIndex):
+        """ When the user clicks a cell, show its references """
         row = index.row()
         word = self.table_view.model().index(row, 0).data()
         word_entry = self.word_entries[word]
-        strings = [f"{ref.book} {ref.chapter}:{ref.verse} {ref.text}" for ref in word_entry.refs]
-        list_model = QStringListModel()
-        list_model.setStringList(strings)
-        self.reference_list_view.setModel(list_model)
+        html = ""
+        for ref in word_entry.refs:
+            html += f"<h4>{ref.book} {ref.chapter}:{ref.verse}</h4><p>{ref.text}</p>"
+        self.references.setHtml(html)
+        # strings = [f"{ref.book} {ref.chapter}:{ref.verse} {ref.text}" for ref in word_entry.refs]
+        # list_model = QStringListModel()
+        # list_model.setStringList(strings)
+        # self.reference_list_view.setModel(list_model)
 
 
 def main() -> None:  # pragma: no cover
