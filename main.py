@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QTableView,
     QHBoxLayout,
     QSizePolicy,
-    QTextEdit
+    QTextEdit,
 )
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import (
@@ -63,17 +63,18 @@ def setup_logging(trace: bool) -> None:  # pragma: no cover
 
 
 class DictionaryTableModel(QAbstractTableModel):
-    """ Provides a data model that maps WordEntries to a table """
+    """Provides a data model that maps WordEntries to a table"""
+
     def __init__(self, data_dict: dict[str, analyzer.WordEntry]):
         super().__init__()
         self.data_dict = data_dict
         self.keys = list(self.data_dict.keys())
         self.columns = ["Word", "Count"]
 
-    def rowCount(self, parent=None) -> int: # pylint: disable=unused-argument
+    def rowCount(self, parent=None) -> int:  # pylint: disable=unused-argument
         return len(self.data_dict)
 
-    def columnCount(self, parent=None) -> int: # pylint: disable=unused-argument
+    def columnCount(self, parent=None) -> int:  # pylint: disable=unused-argument
         return len(self.columns)
 
     def data(self, index, role=Qt.DisplayRole) -> Any:
@@ -124,10 +125,15 @@ class MainWindow(QMainWindow):
         self.references = QTextEdit()
         self.references.setReadOnly(True)
 
+        # Fix Spelling button
+        self.fix_spelling_button = QPushButton("Fix Spelling")
+        self.fix_spelling_button.clicked.connect(self.on_fix_spelling_clicked)
+
         # Create left pane layout
         left_pane_layout = QVBoxLayout()
         left_pane_layout.addWidget(self.load_usfm_button)
         left_pane_layout.addWidget(self.table_view)
+        left_pane_layout.addWidget(self.fix_spelling_button)
 
         # Create horizontal panes layout
         horizontal_panes_layout = QHBoxLayout()
@@ -167,15 +173,29 @@ class MainWindow(QMainWindow):
         self.table_view.setModel(proxy_table_model)
 
     def on_table_cell_clicked(self, index: QModelIndex):
-        """ When the user clicks a cell, show its references """
+        """When the user clicks a cell, show its references"""
         row = index.row()
         word = self.table_view.model().index(row, 0).data()
         word_entry = self.word_entries[word]
         html_refs = []
         for ref in word_entry.refs:
-            text = f"<h4>{ref.book} {ref.chapter}:{ref.verse}</h4><p>{ref.text.replace(word, f"<font color='red'>{word}</font>")}</p>"
+            text = (
+                f"<h4>{ref.book} {ref.chapter}:{ref.verse}</h4>"
+                f"<p>{ref.text.replace(word, f"<font color='red'>{word}</font>")}</p>"
+            )
             html_refs.append(text)
         self.references.setHtml("".join(html_refs))
+
+    def on_fix_spelling_clicked(self) -> None:
+        """Fix spelling of selected word."""
+        selected_indexes = self.table_view.selectedIndexes()
+        if not selected_indexes:
+            logging.debug("User clicked button but no row selected!")
+            return
+        row = selected_indexes[0].row()
+        logging.debug("User selected row %d", row)
+        word = self.table_view.model().index(row, 0).data()
+        logging.debug("User selected word %s", word)
 
 
 def main() -> None:  # pragma: no cover
