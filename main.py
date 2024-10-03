@@ -156,7 +156,9 @@ class MainWindow(QMainWindow):
 
         # Ask user for directory
         directory = QFileDialog.getExistingDirectory(
-            self, "Select USFM Directory", dir=str(self.path)
+            self,
+            "Select USFM Directory",
+            dir=str(self.path)
         )
 
         # Abort if canceled
@@ -181,14 +183,7 @@ class MainWindow(QMainWindow):
         word = self.table_view.model().index(row, 0).data()
         self.table_view.selectRow(row)
         word_entry = self.word_entries[word]
-        html_refs = []
-        for ref in word_entry.refs:
-            text = (
-                f"<h4>{ref.book} {ref.chapter}:{ref.verse}</h4>"
-                f"<p>{ref.text.replace(word, f"<font color='red'>{word}</font>")}</p>"
-            )
-            html_refs.append(text)
-        self.references.setHtml("".join(html_refs))
+        self.build_refs(word_entry)
 
     def on_fix_spelling_clicked(self) -> None:
         """Fix spelling of selected word."""
@@ -211,17 +206,24 @@ class MainWindow(QMainWindow):
             return
         word_entry = self.word_entries[word]
         for ref in word_entry.refs:
-            command = [
-                "sed",
-                "-i",
-                f"s/{word}/{corrected_spelling}/g",
-                str(ref.file_path),
-            ]
+            command = ["sed", "-i", f"s/{word}/{corrected_spelling}/g", str(ref.file_path)]
             result = subprocess.run(command, capture_output=True, text=True)
-            if result.returncode == 0:
-                logging.debug("Success: %s", str(command))
-            else:
+            if result.returncode != 0:
                 logging.warning("Return code %i: %s", result.returncode, str(command))
+                return
+            logging.debug("Success: %s", str(command))
+            ref.text = ref.text.replace(word, corrected_spelling)
+        self.build_refs(word_entry)
+
+    def build_refs(self, word_entry):
+        html_refs = []
+        for ref in word_entry.refs:
+            text = (
+                f"<h4>{ref.book} {ref.chapter}:{ref.verse}</h4>"
+                f"<p>{ref.text.replace(word_entry.word, f"<font color='red'>{word_entry.word}</font>")}</p>"
+            )
+            html_refs.append(text)
+        self.references.setHtml("".join(html_refs))
 
 
 def main() -> None:  # pragma: no cover
