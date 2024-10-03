@@ -171,14 +171,11 @@ class MainWindow(QMainWindow):
         row = index.row()
         word = self.table_view.model().index(row, 0).data()
         word_entry = self.word_entries[word]
-        html = ""
+        html_refs = []
         for ref in word_entry.refs:
-            html += f"<h4>{ref.book} {ref.chapter}:{ref.verse}</h4><p>{ref.text}</p>"
-        self.references.setHtml(html)
-        # strings = [f"{ref.book} {ref.chapter}:{ref.verse} {ref.text}" for ref in word_entry.refs]
-        # list_model = QStringListModel()
-        # list_model.setStringList(strings)
-        # self.reference_list_view.setModel(list_model)
+            text = f"<h4>{ref.book} {ref.chapter}:{ref.verse}</h4><p>{ref.text.replace(word, f"<font color='red'>{word}</font>")}</p>"
+            html_refs.append(text)
+        self.references.setHtml("".join(html_refs))
 
 
 def main() -> None:  # pragma: no cover
