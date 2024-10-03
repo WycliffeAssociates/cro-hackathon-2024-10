@@ -239,6 +239,7 @@ class MainWindow(QMainWindow):
             return
         logging.debug("Success: %s", str(command))
         logging.debug("%s", result.stdout)
+        logging.debug("%s", result.stderr)
 
         command = ["git", "commit", "-m", "Correct spelling"]
         result = subprocess.run(command, capture_output=True, text=True)
@@ -247,6 +248,7 @@ class MainWindow(QMainWindow):
             return
         logging.debug("Success: %s", str(command))
         logging.debug("%s", result.stdout)
+        logging.debug("%s", result.stderr)
 
         command = ["git", "push"]
         result = subprocess.run(command, capture_output=True, text=True)
@@ -255,6 +257,7 @@ class MainWindow(QMainWindow):
             return
         logging.debug("Success: %s", str(command))
         logging.debug("%s", result.stdout)
+        logging.debug("%s", result.stderr)
 
 
 def main() -> None:  # pragma: no cover
