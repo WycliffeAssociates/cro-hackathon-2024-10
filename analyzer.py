@@ -30,6 +30,7 @@ class VerseReference:
     book: str
     chapter: int
     verse: int
+    file_path: Path
     text: str
 
     def __str__(self) -> str:
@@ -130,7 +131,7 @@ def process_file(path: Path) -> dict[str, WordEntry]:
                 if len(word) == 0:
                     continue
                 verse_ref = VerseReference(
-                    current_book, int(current_chapter), int(current_verse), text
+                    current_book, int(current_chapter), int(current_verse), path, text
                 )
 
                 # If new word, create entry for it

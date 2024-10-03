@@ -3,9 +3,10 @@
 # Standard imports
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
-import logging
-import sys
 from typing import Any
+import logging
+import subprocess
+import sys
 
 # Third party imports
 from PySide6.QtWidgets import (
@@ -203,13 +204,22 @@ class MainWindow(QMainWindow):
             return
         row = selected_indexes[0].row()
         word = self.table_view.model().index(row, 0).data()
-        text, ok = QInputDialog.getText(
+        corrected_spelling, ok = QInputDialog.getText(
             None,
             "Correct Spelling",
             f"Please provide the correct spelling of the word '{word}'",
         )
-        if ok and text:
-            logging.warning("OK")
+        if not ok or not corrected_spelling:
+            return
+        word_entry = self.word_entries[word]
+        for ref in word_entry.refs:
+            command = ["sed", "-i", f"s/{word}/{corrected_spelling}/g", str(ref.file_path)]
+            result = subprocess.run(command, capture_output=True, text=True)
+            if result.returncode == 0:
+                logging.debug("Success: %s", str(command))
+            else:
+                logging.warning("Return code %i: %s", result.returncode, str(command))
+
 
 
 def main() -> None:  # pragma: no cover
