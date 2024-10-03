@@ -106,6 +106,7 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon("icon.png"))
 
         # Data
+        self.path = Path("/home/oliverc/repos/en_ulb_craig")
         self.word_entries: dict[str, analyzer.WordEntry] = {}
 
         # Load USFM button
@@ -156,17 +157,17 @@ class MainWindow(QMainWindow):
         directory = QFileDialog.getExistingDirectory(
             self,
             "Select USFM Directory",
-            dir="/home/oliverc/repos/en_ulb_craig",
+            dir=str(self.path)
         )
 
         # Abort if canceled
         if not directory:
             return
 
-        path = Path(directory)
+        self.path = Path(directory)
 
         # To do: Run this in a thread so we don't block the UI
-        self.word_entries = analyzer.process_file_or_dir(path)
+        self.word_entries = analyzer.process_file_or_dir(self.path)
 
         # Update data model
         table_model = DictionaryTableModel(self.word_entries)
