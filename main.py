@@ -156,9 +156,7 @@ class MainWindow(QMainWindow):
 
         # Ask user for directory
         directory = QFileDialog.getExistingDirectory(
-            self,
-            "Select USFM Directory",
-            dir=str(self.path)
+            self, "Select USFM Directory", dir=str(self.path)
         )
 
         # Abort if canceled
@@ -213,13 +211,17 @@ class MainWindow(QMainWindow):
             return
         word_entry = self.word_entries[word]
         for ref in word_entry.refs:
-            command = ["sed", "-i", f"s/{word}/{corrected_spelling}/g", str(ref.file_path)]
+            command = [
+                "sed",
+                "-i",
+                f"s/{word}/{corrected_spelling}/g",
+                str(ref.file_path),
+            ]
             result = subprocess.run(command, capture_output=True, text=True)
             if result.returncode == 0:
                 logging.debug("Success: %s", str(command))
             else:
                 logging.warning("Return code %i: %s", result.returncode, str(command))
-
 
 
 def main() -> None:  # pragma: no cover
