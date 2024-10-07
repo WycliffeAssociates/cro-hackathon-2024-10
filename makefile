@@ -37,6 +37,11 @@ format: .venv
 	# Update modified date of .venv so that make knows it's been updated
 	touch .venv
 
+.PHONY: build
+build: .venv
+	. .venv/bin/activate \
+	&& pyinstaller --onefile main.py
+
 .PHONY: clean
 clean:
 	rm -rf .mypy_cache

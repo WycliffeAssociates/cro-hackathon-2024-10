@@ -223,9 +223,10 @@ class MainWindow(QMainWindow):
     def build_refs(self, word_entry):
         html_refs = []
         for ref in word_entry.refs:
+            highlighted_text = ref.text.replace(word_entry.word, f"<font color='red'>{word_entry.word}</font>")
             text = (
                 f"<h4>{ref.book} {ref.chapter}:{ref.verse}</h4>"
-                f"<p>{ref.text.replace(word_entry.word, f"<font color='red'>{word_entry.word}</font>")}</p>"
+                f"<p>{highlighted_text}</p>"
             )
             html_refs.append(text)
         self.references.setHtml("".join(html_refs))

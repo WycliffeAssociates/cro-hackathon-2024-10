@@ -3,3 +3,4 @@ coverage==7.6.1
 mypy==1.11.1
 pylint==3.2.6
 pyside6==6.7.3
+pyinstaller==6.10.0
