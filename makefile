@@ -11,7 +11,7 @@ pylint: .venv
 	. .venv/bin/activate && python3 -m pylint --output-format=colorized *.py 
 
 .PHONY: lint
-lint: .venv mypy lint
+lint: .venv mypy pylint
 
 .PHONY: test
 test: .venv
@@ -50,3 +50,28 @@ clean:
 	rm -rf test/__pycache__
 	rm -rf htmlcov
 	rm -f .coverage
+
+#
+# Watch directories for changes
+#
+
+.phony: lint-watch
+lint-watch:
+	while inotifywait -e close_write,moved_to,create . ; do \
+		clear; \
+		$(MAKE) lint; \
+	done
+
+.phony: test-watch
+test-watch:
+	while inotifywait -e close_write,moved_to,create . ; do \
+		clear; \
+		$(MAKE) test; \
+	done
+
+.phony: lint-test-watch
+lint-test-watch:
+	while inotifywait -e close_write,moved_to,create . ; do \
+		clear; \
+		$(MAKE) lint && $(MAKE) test; \
+	done
