@@ -1,33 +1,14 @@
+#
+# Run app
+#
+
 .PHONY: run
 run: .venv
 	. .venv/bin/activate && python3 main.py --trace
 
-.PHONY: mypy
-mypy: .venv
-	. .venv/bin/activate && python3 -m mypy --strict *.py 
-
-.PHONY: pylint
-pylint: .venv
-	. .venv/bin/activate && python3 -m pylint --output-format=colorized *.py 
-
-.PHONY: lint
-lint: .venv mypy pylint
-
-.PHONY: test
-test: .venv
-	. .venv/bin/activate \
-	&& python3 -m coverage run --branch -m unittest discover -v \
-	&& python3 -m coverage report \
-	&& python3 -m coverage html
-
-.PHONY: edit
-edit:
-	${EDITOR} readme.md main.py *.py **/*.py makefile requirements.txt .gitignore
-
-.PHONY: format
-format: .venv
-	. .venv/bin/activate && python -m black *.py
-	pandoc readme.md --from markdown --to markdown --output readme.md
+#
+# Virtual environment management
+#
 
 .venv: requirements.txt
 	# Create virtual environment
@@ -37,10 +18,84 @@ format: .venv
 	# Update modified date of .venv so that make knows it's been updated
 	touch .venv
 
+#
+# Linting
+#
+
+.PHONY: mypy
+mypy: .venv
+	. .venv/bin/activate && python3 -m mypy --strict *.py tests/*.py
+
+.PHONY: pylint
+pylint: .venv
+	. .venv/bin/activate && python3 -m pylint --output-format=colorized *.py tests/*.py
+
+.PHONY: lint
+lint: .venv mypy pylint
+
+#
+# Testing
+#
+
+.PHONY: test
+test: .venv
+	. .venv/bin/activate \
+	&& python3 -m coverage run --branch -m unittest discover -s tests -v \
+	&& python3 -m coverage report \
+	&& python3 -m coverage html
+
+#
+# Watch directories for changes
+#
+
+.phony: lint-watch
+lint-watch:
+	while inotifywait -e close_write,moved_to,create . tests; do \
+		clear; \
+		$(MAKE) lint; \
+	done
+
+.phony: test-watch
+test-watch:
+	while inotifywait -e close_write,moved_to,create . tests; do \
+		clear; \
+		$(MAKE) test; \
+	done
+
+.phony: lint-test-watch
+lint-test-watch:
+	while inotifywait -e close_write,moved_to,create . tests; do \
+		clear; \
+		$(MAKE) lint && $(MAKE) test; \
+	done
+
+
+#
+# Building
+#
+
 .PHONY: build
 build: .venv
 	. .venv/bin/activate \
 	&& pyinstaller --onefile main.py
+
+
+#
+# Editing and Formatting
+#
+
+.PHONY: edit
+edit:
+	${EDITOR} readme.md main.py *.py tests/*.py makefile requirements.txt .gitignore
+
+.PHONY: format
+format: .venv
+	. .venv/bin/activate && python -m black *.py tests/*.py
+	pandoc readme.md --from markdown --to markdown --output readme.md
+
+#
+# Cleanup
+#
 
 .PHONY: clean
 clean:
@@ -50,28 +105,5 @@ clean:
 	rm -rf test/__pycache__
 	rm -rf htmlcov
 	rm -f .coverage
-
-#
-# Watch directories for changes
-#
-
-.phony: lint-watch
-lint-watch:
-	while inotifywait -e close_write,moved_to,create . ; do \
-		clear; \
-		$(MAKE) lint; \
-	done
-
-.phony: test-watch
-test-watch:
-	while inotifywait -e close_write,moved_to,create . ; do \
-		clear; \
-		$(MAKE) test; \
-	done
-
-.phony: lint-test-watch
-lint-test-watch:
-	while inotifywait -e close_write,moved_to,create . ; do \
-		clear; \
-		$(MAKE) lint && $(MAKE) test; \
-	done
+	rm -rf build
+	rm -rf dist
