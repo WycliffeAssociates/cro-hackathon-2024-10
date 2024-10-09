@@ -2,39 +2,16 @@
 
 # Standard imports
 from argparse import ArgumentParser, Namespace
-from pathlib import Path
-from typing import Any, Optional
 import logging
-import subprocess
 import sys
 
 # Third party imports
 from PySide6.QtWidgets import (
     QApplication,
-    QMainWindow,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-    QFileDialog,
-    QTableView,
-    QHBoxLayout,
-    QSizePolicy,
-    QTextEdit,
-    QMessageBox,
-    QInputDialog,
-)
-from PySide6.QtGui import QIcon
-from PySide6.QtCore import (
-    Qt,
-    QAbstractTableModel,
-    QSortFilterProxyModel,
-    QModelIndex,
-    QPersistentModelIndex,
 )
 
 # Project imports
 from main_window import MainWindow
-import analyzer
 
 
 def parse_args() -> Namespace:  # pragma: no cover
@@ -65,51 +42,6 @@ def setup_logging(trace: bool) -> None:  # pragma: no cover
         ),
         level=logging_level,
     )
-
-
-class DictionaryTableModel(QAbstractTableModel):
-    """Provides a data model that maps WordEntries to a table"""
-
-    def __init__(self, data_dict: dict[str, analyzer.WordEntry]):
-        super().__init__()
-        self.data_dict = data_dict
-        self.keys = list(self.data_dict.keys())
-        self.columns = ["Word", "Count"]
-
-    def rowCount(
-        self, parent: Optional[QModelIndex | QPersistentModelIndex] = None
-    ) -> int:  # pylint: disable=unused-argument
-        return len(self.data_dict)
-
-    def columnCount(
-        self, parent: Optional[QModelIndex | QPersistentModelIndex] = None
-    ) -> int:  # pylint: disable=unused-argument
-        return len(self.columns)
-
-    def data(
-        self,
-        index: QModelIndex | QPersistentModelIndex,
-        role: int = Qt.ItemDataRole.DisplayRole,
-    ) -> Any:
-        if role == Qt.ItemDataRole.DisplayRole:
-            key = self.keys[index.row()]
-            if index.column() == 0:  # First column displays keys
-                return key
-            if index.column() == 1:  # Second column displays values
-                return len(self.data_dict[key].refs)
-        return None
-
-    def headerData(
-        self,
-        section: int,
-        orientation: Qt.Orientation,
-        role: int = Qt.ItemDataRole.DisplayRole,
-    ) -> Any:
-        if role == Qt.ItemDataRole.DisplayRole:
-            if orientation == Qt.Orientation.Horizontal:
-                return self.columns[section]
-            return str(section)
-        return None
 
 
 def main() -> None:  # pragma: no cover
