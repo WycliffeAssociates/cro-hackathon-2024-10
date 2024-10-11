@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
     QWidget,
+    QStatusBar,
 )
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import (
@@ -39,7 +40,7 @@ import analyzer
 class USFMParserSignals(QObject):
     """Signals for the USFM Parser worker."""
 
-    result = Signal(dict[str, WordEntry])
+    result = Signal(object)
 
 
 class USFMParser(QRunnable):
@@ -92,19 +93,19 @@ class MainWindow(QMainWindow):
         self.references.setReadOnly(True)
 
         # Fix Spelling button
-        self.fix_spelling_button = QPushButton("Fix Spelling")
-        self.fix_spelling_button.clicked.connect(self.on_fix_spelling_clicked)
+        fix_spelling_button = QPushButton("Fix Spelling")
+        fix_spelling_button.clicked.connect(self.on_fix_spelling_clicked)
 
-        # Fix Spelling button
-        self.push_changes_button = QPushButton("Push changes")
-        self.push_changes_button.clicked.connect(self.on_push_changes_clicked)
+        # Push Changes button
+        push_changes_button = QPushButton("Push changes")
+        push_changes_button.clicked.connect(self.on_push_changes_clicked)
 
         # Create left pane layout
         left_pane_layout = QVBoxLayout()
         left_pane_layout.addWidget(self.load_usfm_button)
         left_pane_layout.addWidget(self.table_view)
-        left_pane_layout.addWidget(self.fix_spelling_button)
-        left_pane_layout.addWidget(self.push_changes_button)
+        left_pane_layout.addWidget(fix_spelling_button)
+        left_pane_layout.addWidget(push_changes_button)
 
         # Create horizontal panes layout
         horizontal_panes_layout = QHBoxLayout()
@@ -114,6 +115,9 @@ class MainWindow(QMainWindow):
         # Create central widget
         central_widget = QWidget(self)
         central_widget.setLayout(horizontal_panes_layout)
+
+        # Status bar
+        self.setStatusBar(QStatusBar())
 
         self.setCentralWidget(central_widget)
         self.resize(800, 600)
@@ -132,21 +136,29 @@ class MainWindow(QMainWindow):
 
         self.path = Path(directory)
 
+        # Launch worker
+        self.statusBar().showMessage("Reading USFM files...")
         worker = USFMParser(self.path)
         worker.signals.result.connect(self.on_load_usfm_complete)
         self.threadpool.start(worker)
 
-    def on_load_usfm_complete(self) -> None:
-        """ Called back on the main thread after USFM parsing is complete. """
+    def on_load_usfm_complete(self, word_entries: dict[str, WordEntry]) -> None:
+        """Called back on the main thread after USFM parsing is complete."""
+
+        # Remember word entries for later
+        self.word_entries = word_entries
 
         # Update data model
-        table_model = DictionaryTableModel(self.word_entries)
+        table_model = DictionaryTableModel(word_entries)
         proxy_table_model = QSortFilterProxyModel()
         proxy_table_model.setSourceModel(table_model)
         proxy_table_model.sort(1, order=Qt.SortOrder.DescendingOrder)
 
-        # Attach data model to tablE
+        # Attach data model to table
         self.table_view.setModel(proxy_table_model)
+
+        # Done
+        self.statusBar().showMessage("Finished loading USFM.", 5000)
 
     def on_table_cell_clicked(self, index: QModelIndex) -> None:
         """When the user clicks a cell, show its references"""

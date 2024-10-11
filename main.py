@@ -35,6 +35,8 @@ def setup_logging(trace: bool) -> None:  # pragma: no cover
             "%(asctime)s "
             # Severity of log entry
             "%(levelname)s "
+            # Process and thread
+            "%(process)d/%(threadName)s "
             # module/function:line:
             "%(module)s/%(funcName)s:%(lineno)d: "
             # message
