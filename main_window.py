@@ -137,10 +137,10 @@ class MainWindow(QMainWindow):
         self.path = Path(directory)
 
         # Launch worker
-        self.statusBar().showMessage("Reading USFM files...")
         worker = USFMParser(self.path)
         worker.signals.result.connect(self.on_load_usfm_complete)
         self.threadpool.start(worker)
+        self.statusBar().showMessage("Reading USFM files...")
 
     def on_load_usfm_complete(self, word_entries: dict[str, WordEntry]) -> None:
         """Called back on the main thread after USFM parsing is complete."""
@@ -220,8 +220,10 @@ class MainWindow(QMainWindow):
     def on_push_changes_clicked(self) -> None:
         """Push changes to server."""
 
+
         repo_dir = str(self.path)
 
+        self.statusBar().showMessage("Staging changed files...", 5000)
         command = ["git", "add", "--all"]
         result = subprocess.run(
             command, capture_output=True, text=True, cwd=repo_dir, check=True
@@ -233,6 +235,7 @@ class MainWindow(QMainWindow):
         logging.debug("%s", result.stdout)
         logging.debug("%s", result.stderr)
 
+        self.statusBar().showMessage("Committing changed files...", 5000)
         command = ["git", "commit", "-m", "Correct spelling"]
         result = subprocess.run(
             command, capture_output=True, text=True, cwd=repo_dir, check=True
@@ -244,6 +247,7 @@ class MainWindow(QMainWindow):
         logging.debug("%s", result.stdout)
         logging.debug("%s", result.stderr)
 
+        self.statusBar().showMessage("Pushing changes to server...", 5000)
         command = ["git", "push"]
         result = subprocess.run(
             command, capture_output=True, text=True, cwd=repo_dir, check=True
@@ -254,3 +258,5 @@ class MainWindow(QMainWindow):
         logging.debug("Success: %s", str(command))
         logging.debug("%s", result.stdout)
         logging.debug("%s", result.stderr)
+
+        self.statusBar().showMessage("Done pushing changes to server.", 5000)
