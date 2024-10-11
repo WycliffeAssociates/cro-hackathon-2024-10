@@ -7,29 +7,53 @@ import subprocess
 
 # Third party imports
 from PySide6.QtWidgets import (
+    QFileDialog,
+    QHBoxLayout,
+    QInputDialog,
     QMainWindow,
+    QMessageBox,
     QPushButton,
+    QSizePolicy,
+    QTableView,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
-    QFileDialog,
-    QTableView,
-    QHBoxLayout,
-    QSizePolicy,
-    QTextEdit,
-    QMessageBox,
-    QInputDialog,
 )
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import (
     Qt,
     QSortFilterProxyModel,
     QModelIndex,
+    QObject,
+    Signal,
+    QRunnable,
+    QThreadPool,
 )
 
 # Project imports
 from analyzer import WordEntry
 from dictionary_table_model import DictionaryTableModel
 import analyzer
+
+
+class USFMParserSignals(QObject):
+    """Signals for the USFM Parser worker."""
+
+    result = Signal(dict[str, WordEntry])
+
+
+class USFMParser(QRunnable):
+    """Worker class for running the USFM parsing."""
+
+    def __init__(self, path: Path):
+        super().__init__()
+        self.signals = USFMParserSignals()
+        self.path = path
+
+    def run(self) -> None:
+        """Analyze USFM."""
+        word_entries = analyzer.process_file_or_dir(self.path)
+        self.signals.result.emit(word_entries)
 
 
 class MainWindow(QMainWindow):
@@ -40,6 +64,9 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Spell Checking App")
         self.setWindowIcon(QIcon("icon.png"))
+
+        # Threading
+        self.threadpool = QThreadPool()
 
         # Data
         self.path = Path("/home/oliverc/repos/en_ulb_craig")
@@ -105,14 +132,20 @@ class MainWindow(QMainWindow):
 
         self.path = Path(directory)
 
-        # To do: Run this in a thread so we don't block the UI
-        self.word_entries = analyzer.process_file_or_dir(self.path)
+        worker = USFMParser(self.path)
+        worker.signals.result.connect(self.on_load_usfm_complete)
+        self.threadpool.start(worker)
+
+    def on_load_usfm_complete(self) -> None:
+        """ Called back on the main thread after USFM parsing is complete. """
 
         # Update data model
         table_model = DictionaryTableModel(self.word_entries)
         proxy_table_model = QSortFilterProxyModel()
         proxy_table_model.setSourceModel(table_model)
         proxy_table_model.sort(1, order=Qt.SortOrder.DescendingOrder)
+
+        # Attach data model to tablE
         self.table_view.setModel(proxy_table_model)
 
     def on_table_cell_clicked(self, index: QModelIndex) -> None:
