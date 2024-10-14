@@ -37,10 +37,11 @@ from dictionary_table_model import DictionaryTableModel
 import analyzer
 
 
-class USFMParserSignals(QObject):
+class WorkerSignals(QObject):
     """Signals for the USFM Parser worker."""
 
     result = Signal(object)
+    status = Signal(str)
 
 
 class USFMParser(QRunnable):
@@ -48,13 +49,68 @@ class USFMParser(QRunnable):
 
     def __init__(self, path: Path):
         super().__init__()
-        self.signals = USFMParserSignals()
+        self.signals = WorkerSignals()
         self.path = path
 
     def run(self) -> None:
         """Analyze USFM."""
         word_entries = analyzer.process_file_or_dir(self.path)
         self.signals.result.emit(word_entries)
+
+
+class GitPusher(QRunnable):
+    """Worker class for pushing to the server. """
+
+    def __init__(self, path: Path):
+        super().__init__()
+        self.signals = WorkerSignals()
+        self.path = path
+
+    def run(self) -> None:
+        """Push changes."""
+
+        repo_dir = str(self.path)
+
+        self.signals.status.emit("Staging files...")
+        command = ["git", "add", "--all"]
+        result = subprocess.run(
+            command, capture_output=True, text=True, cwd=repo_dir, check=True
+        )
+        if result.returncode != 0:
+            self.signals.status.emit(f"Error: return code {result.returncode}")
+            logging.warning("Return code %i: %s", result.returncode, str(command))
+            return
+        logging.debug("Success: %s", str(command))
+        logging.debug("%s", result.stdout)
+        logging.debug("%s", result.stderr)
+
+        self.signals.status.emit("Committing files...")
+        command = ["git", "commit", "-m", "Correct spelling"]
+        result = subprocess.run(
+            command, capture_output=True, text=True, cwd=repo_dir, check=True
+        )
+        if result.returncode != 0:
+            self.signals.status.emit(f"Error: return code {result.returncode}")
+            logging.warning("Return code %i: %s", result.returncode, str(command))
+            return
+        logging.debug("Success: %s", str(command))
+        logging.debug("%s", result.stdout)
+        logging.debug("%s", result.stderr)
+
+        self.signals.status.emit("Pushing files...")
+        command = ["git", "push"]
+        result = subprocess.run(
+            command, capture_output=True, text=True, cwd=repo_dir, check=True
+        )
+        if result.returncode != 0:
+            self.signals.status.emit(f"Error: return code {result.returncode}")
+            logging.warning("Return code %i: %s", result.returncode, str(command))
+            return
+        logging.debug("Success: %s", str(command))
+        logging.debug("%s", result.stdout)
+        logging.debug("%s", result.stderr)
+
+        self.signals.status.emit("Done pushing files to server.")
 
 
 class MainWindow(QMainWindow):
@@ -184,6 +240,7 @@ class MainWindow(QMainWindow):
             self,
             "Correct Spelling",
             f"Please provide the correct spelling of the word '{word}'",
+            text=word,
         )
         if not ok or not corrected_spelling:
             return
@@ -217,46 +274,13 @@ class MainWindow(QMainWindow):
             html_refs.append(text)
         self.references.setHtml("".join(html_refs))
 
+    def update_status_bar(self, message: str) -> None:
+        """ Updates status bar.  Only call on main thread! """
+        self.statusBar().showMessage(message, 5000)
+
     def on_push_changes_clicked(self) -> None:
         """Push changes to server."""
-
-
-        repo_dir = str(self.path)
-
-        self.statusBar().showMessage("Staging changed files...", 5000)
-        command = ["git", "add", "--all"]
-        result = subprocess.run(
-            command, capture_output=True, text=True, cwd=repo_dir, check=True
-        )
-        if result.returncode != 0:
-            logging.warning("Return code %i: %s", result.returncode, str(command))
-            return
-        logging.debug("Success: %s", str(command))
-        logging.debug("%s", result.stdout)
-        logging.debug("%s", result.stderr)
-
-        self.statusBar().showMessage("Committing changed files...", 5000)
-        command = ["git", "commit", "-m", "Correct spelling"]
-        result = subprocess.run(
-            command, capture_output=True, text=True, cwd=repo_dir, check=True
-        )
-        if result.returncode != 0:
-            logging.warning("Return code %i: %s", result.returncode, str(command))
-            return
-        logging.debug("Success: %s", str(command))
-        logging.debug("%s", result.stdout)
-        logging.debug("%s", result.stderr)
-
-        self.statusBar().showMessage("Pushing changes to server...", 5000)
-        command = ["git", "push"]
-        result = subprocess.run(
-            command, capture_output=True, text=True, cwd=repo_dir, check=True
-        )
-        if result.returncode != 0:
-            logging.warning("Return code %i: %s", result.returncode, str(command))
-            return
-        logging.debug("Success: %s", str(command))
-        logging.debug("%s", result.stdout)
-        logging.debug("%s", result.stderr)
-
-        self.statusBar().showMessage("Done pushing changes to server.", 5000)
+        # Launch worker
+        worker = GitPusher(self.path)
+        worker.signals.status.connect(self.update_status_bar)
+        self.threadpool.start(worker)
