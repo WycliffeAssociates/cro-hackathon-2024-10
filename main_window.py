@@ -4,6 +4,7 @@
 from pathlib import Path
 import logging
 import subprocess
+from typing import cast
 
 # Third party imports
 from PySide6.QtWidgets import (
@@ -25,7 +26,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import (
     Qt,
-    QSortFilterProxyModel,
     QModelIndex,
     QObject,
     Signal,
@@ -35,7 +35,7 @@ from PySide6.QtCore import (
 
 # Project imports
 from analyzer import WordEntry
-from dictionary_table_model import DictionaryTableModel
+from dictionary_table_model import DictionaryTableModel, FilterProxyModel
 import analyzer
 
 
@@ -141,6 +141,7 @@ class MainWindow(QMainWindow):
         filter_field.setSizePolicy(
             QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         )
+        filter_field.textChanged.connect(self.on_filter_changed)
 
         # Table of words
         table_model = DictionaryTableModel({})
@@ -182,8 +183,9 @@ class MainWindow(QMainWindow):
         # Setup left dock
         left_dock_widget = QWidget()
         left_dock_widget.setLayout(left_pane_layout)
-        left_dock = QDockWidget("Left Dock", self)
+        left_dock = QDockWidget(self)
         left_dock.setWidget(left_dock_widget)
+        left_dock.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
 
         # Setup main window
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, left_dock)
@@ -218,7 +220,7 @@ class MainWindow(QMainWindow):
 
         # Update data model
         table_model = DictionaryTableModel(word_entries)
-        proxy_table_model = QSortFilterProxyModel()
+        proxy_table_model = FilterProxyModel()
         proxy_table_model.setSourceModel(table_model)
         proxy_table_model.sort(1, order=Qt.SortOrder.DescendingOrder)
 
@@ -227,6 +229,11 @@ class MainWindow(QMainWindow):
 
         # Done
         self.statusBar().showMessage("Finished loading USFM.", 5000)
+
+    def on_filter_changed(self, text: str) -> None:
+        """When the user changes the word filter."""
+        proxy_table_model = cast(FilterProxyModel, self.table_view.model())
+        proxy_table_model.set_filter_text(text)
 
     def on_table_cell_clicked(self, index: QModelIndex) -> None:
         """When the user clicks a cell, show its references"""
