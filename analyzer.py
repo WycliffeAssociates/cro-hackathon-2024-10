@@ -14,6 +14,7 @@ import time
 # Project imports
 
 
+# Regular expressions for managing USFM and Markdown
 HEADING_REGEX = re.compile(r"^\\h (.*)$")
 CHAPTER_REGEX = re.compile(r"^\\c (.*)$")
 VERSE_REGEX = re.compile(r"^\\v (\d+) (.*)$")

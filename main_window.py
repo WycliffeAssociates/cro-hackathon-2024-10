@@ -8,7 +8,6 @@ import subprocess
 # Third party imports
 from PySide6.QtWidgets import (
     QFileDialog,
-    QHBoxLayout,
     QInputDialog,
     QMainWindow,
     QMessageBox,
@@ -19,6 +18,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QStatusBar,
+    QLineEdit,
+    QDockWidget,
+    QHeaderView,
 )
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import (
@@ -59,7 +61,7 @@ class USFMParser(QRunnable):
 
 
 class GitPusher(QRunnable):
-    """Worker class for pushing to the server. """
+    """Worker class for pushing to the server."""
 
     def __init__(self, path: Path):
         super().__init__()
@@ -133,6 +135,13 @@ class MainWindow(QMainWindow):
         self.load_usfm_button = QPushButton("Load USFM")
         self.load_usfm_button.clicked.connect(self.on_load_usfm)
 
+        # Filter field
+        filter_field = QLineEdit()
+        filter_field.setPlaceholderText("Filter word list")
+        filter_field.setSizePolicy(
+            QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        )
+
         # Table of words
         table_model = DictionaryTableModel({})
         self.table_view = QTableView()
@@ -140,9 +149,12 @@ class MainWindow(QMainWindow):
         self.table_view.setSortingEnabled(True)
         self.table_view.verticalHeader().setVisible(False)
         self.table_view.setSizePolicy(
-            QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+            QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         )
         self.table_view.clicked.connect(self.on_table_cell_clicked)
+        self.table_view.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
 
         # List of references
         self.references = QTextEdit()
@@ -159,23 +171,23 @@ class MainWindow(QMainWindow):
         # Create left pane layout
         left_pane_layout = QVBoxLayout()
         left_pane_layout.addWidget(self.load_usfm_button)
+        left_pane_layout.addWidget(filter_field)
         left_pane_layout.addWidget(self.table_view)
         left_pane_layout.addWidget(fix_spelling_button)
         left_pane_layout.addWidget(push_changes_button)
 
-        # Create horizontal panes layout
-        horizontal_panes_layout = QHBoxLayout()
-        horizontal_panes_layout.addLayout(left_pane_layout)
-        horizontal_panes_layout.addWidget(self.references)
-
-        # Create central widget
-        central_widget = QWidget(self)
-        central_widget.setLayout(horizontal_panes_layout)
-
         # Status bar
         self.setStatusBar(QStatusBar())
 
-        self.setCentralWidget(central_widget)
+        # Setup left dock
+        left_dock_widget = QWidget()
+        left_dock_widget.setLayout(left_pane_layout)
+        left_dock = QDockWidget("Left Dock", self)
+        left_dock.setWidget(left_dock_widget)
+
+        # Setup main window
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, left_dock)
+        self.setCentralWidget(self.references)
         self.resize(800, 600)
 
     def on_load_usfm(self) -> None:
@@ -275,7 +287,7 @@ class MainWindow(QMainWindow):
         self.references.setHtml("".join(html_refs))
 
     def update_status_bar(self, message: str) -> None:
-        """ Updates status bar.  Only call on main thread! """
+        """Updates status bar.  Only call on main thread!"""
         self.statusBar().showMessage(message, 5000)
 
     def on_push_changes_clicked(self) -> None:

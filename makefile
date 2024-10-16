@@ -77,7 +77,7 @@ lint-test-watch:
 .PHONY: build
 build: .venv
 	. .venv/bin/activate \
-	&& pyinstaller --onefile main.py
+	&& pyinstaller --noconfirm --onedir main.py
 
 
 #
