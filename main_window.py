@@ -4,7 +4,7 @@
 from pathlib import Path
 import logging
 import subprocess
-from typing import cast
+from typing import cast, Callable, Optional, Any
 
 # Third party imports
 from PySide6.QtWidgets import (
@@ -38,83 +38,7 @@ from analyzer import WordEntry
 from dictionary_table_model import DictionaryTableModel
 from filter_proxy_model import FilterProxyModel
 import analyzer
-
-
-class WorkerSignals(QObject):
-    """Signals for the USFM Parser worker."""
-
-    result = Signal(object)
-    status = Signal(str)
-
-
-class USFMParser(QRunnable):
-    """Worker class for running the USFM parsing."""
-
-    def __init__(self, path: Path):
-        super().__init__()
-        self.signals = WorkerSignals()
-        self.path = path
-
-    def run(self) -> None:
-        """Analyze USFM."""
-        word_entries = analyzer.process_file_or_dir(self.path)
-        self.signals.result.emit(word_entries)
-
-
-class GitPusher(QRunnable):
-    """Worker class for pushing to the server."""
-
-    def __init__(self, path: Path):
-        super().__init__()
-        self.signals = WorkerSignals()
-        self.path = path
-
-    def run(self) -> None:
-        """Push changes."""
-
-        repo_dir = str(self.path)
-
-        self.signals.status.emit("Staging files...")
-        command = ["git", "add", "--all"]
-        result = subprocess.run(
-            command, capture_output=True, text=True, cwd=repo_dir, check=True
-        )
-        if result.returncode != 0:
-            self.signals.status.emit(f"Error: return code {result.returncode}")
-            logging.warning("Return code %i: %s", result.returncode, str(command))
-            return
-        logging.debug("Success: %s", str(command))
-        logging.debug("%s", result.stdout)
-        logging.debug("%s", result.stderr)
-
-        self.signals.status.emit("Committing files...")
-        command = ["git", "commit", "-m", "Correct spelling"]
-        result = subprocess.run(
-            command, capture_output=True, text=True, cwd=repo_dir, check=True
-        )
-        if result.returncode != 0:
-            self.signals.status.emit(f"Error: return code {result.returncode}")
-            logging.warning("Return code %i: %s", result.returncode, str(command))
-            return
-        logging.debug("Success: %s", str(command))
-        logging.debug("%s", result.stdout)
-        logging.debug("%s", result.stderr)
-
-        self.signals.status.emit("Pushing files...")
-        command = ["git", "push"]
-        result = subprocess.run(
-            command, capture_output=True, text=True, cwd=repo_dir, check=True
-        )
-        if result.returncode != 0:
-            self.signals.status.emit(f"Error: return code {result.returncode}")
-            logging.warning("Return code %i: %s", result.returncode, str(command))
-            return
-        logging.debug("Success: %s", str(command))
-        logging.debug("%s", result.stdout)
-        logging.debug("%s", result.stderr)
-
-        self.signals.status.emit("Done pushing files to server.")
-
+from worker import Worker
 
 class MainWindow(QMainWindow):
     """Main Window"""
@@ -208,7 +132,8 @@ class MainWindow(QMainWindow):
         self.path = Path(directory)
 
         # Launch worker
-        worker = USFMParser(self.path)
+        worker = Worker(self.worker_parse_usfm, self.path)
+        worker.signals.progress.connect(self.on_progress_update)
         worker.signals.result.connect(self.on_load_usfm_complete)
         self.threadpool.start(worker)
         self.statusBar().showMessage("Reading USFM files...")
@@ -294,6 +219,10 @@ class MainWindow(QMainWindow):
             html_refs.append(text)
         self.references.setHtml("".join(html_refs))
 
+    def on_progress_update(self, percent_complete:int, message: str) -> None:
+        """Updates status bar with progress. """
+        self.update_status_bar(f"{message} ({percent_complete}%)")
+
     def update_status_bar(self, message: str) -> None:
         """Updates status bar.  Only call on main thread!"""
         self.statusBar().showMessage(message, 5000)
@@ -301,6 +230,47 @@ class MainWindow(QMainWindow):
     def on_push_changes_clicked(self) -> None:
         """Push changes to server."""
         # Launch worker
-        worker = GitPusher(self.path)
-        worker.signals.status.connect(self.update_status_bar)
+        worker = Worker(self.worker_push_to_server, self.path)
+        worker.signals.progress.connect(self.on_progress_update)
         self.threadpool.start(worker)
+
+    def worker_parse_usfm(self, *args: Any, **kwargs: Any) -> dict[str, WordEntry]:
+        """Analyze USFM."""
+        return analyzer.process_file_or_dir(self.path)
+
+    def worker_push_to_server(self, *args: Any, **kwargs: Any) -> None:
+
+        repo_dir = str(self.path)
+        progress_callback = kwargs["progress_callback"]
+
+        progress_callback.emit(0, "Staging files...")
+        command = ["git", "add", "--all"]
+        result = subprocess.run(
+            command, capture_output=True, text=True, cwd=repo_dir, check=True
+        )
+        logging.debug("%s: rc=%d", " ".join(command), result.returncode)
+        if result.returncode != 0:
+            logging.warning("Return code %i: %s", result.returncode, str(command))
+            raise RuntimeError(f"Error calling git: return code {result.returncode}")
+
+        progress_callback.emit(30, "Creating commit...")
+        command = ["git", "commit", "-m", "Correct spelling"]
+        logging.debug("%s: rc=%d", " ".join(command), result.returncode)
+        result = subprocess.run(
+            command, capture_output=True, text=True, cwd=repo_dir, check=True
+        )
+        if result.returncode != 0:
+            logging.warning("Return code %i: %s", result.returncode, str(command))
+            raise RuntimeError(f"Error calling git: return code {result.returncode}")
+
+        progress_callback.emit(66, "Pushing files...")
+        command = ["git", "push"]
+        logging.debug("%s: rc=%d", " ".join(command), result.returncode)
+        result = subprocess.run(
+            command, capture_output=True, text=True, cwd=repo_dir, check=True
+        )
+        if result.returncode != 0:
+            logging.warning("Return code %i: %s", result.returncode, str(command))
+            raise RuntimeError(f"Error calling git: return code {result.returncode}")
+        
+        progress_callback.emit(100, "Done pushing to server.")
