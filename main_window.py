@@ -4,7 +4,7 @@
 from pathlib import Path
 import logging
 import subprocess
-from typing import cast, Callable, Optional, Any
+from typing import cast, Callable, Optional, Any, Tuple
 
 # Third party imports
 from PySide6.QtWidgets import (
@@ -58,7 +58,7 @@ class MainWindow(QMainWindow):
 
         # Load USFM button
         self.load_usfm_button = QPushButton("Load USFM")
-        self.load_usfm_button.clicked.connect(self.on_load_usfm)
+        self.load_usfm_button.clicked.connect(self.on_load_usfm_clicked)
 
         # Filter field
         filter_field = QLineEdit()
@@ -117,7 +117,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.references)
         self.resize(800, 600)
 
-    def on_load_usfm(self) -> None:
+    def on_load_usfm_clicked(self) -> None:
         """Load a USFM file or directory."""
 
         # Ask user for directory
@@ -133,10 +133,10 @@ class MainWindow(QMainWindow):
 
         # Launch worker
         worker = Worker(self.worker_parse_usfm, self.path)
-        worker.signals.progress.connect(self.on_progress_update)
+        worker.signals.progress.connect(self.on_worker_progress_update)
         worker.signals.result.connect(self.on_load_usfm_complete)
         self.threadpool.start(worker)
-        self.statusBar().showMessage("Reading USFM files...")
+        self.update_status_bar("Reading USFM files...")
 
     def on_load_usfm_complete(self, word_entries: dict[str, WordEntry]) -> None:
         """Called back on the main thread after USFM parsing is complete."""
@@ -154,7 +154,7 @@ class MainWindow(QMainWindow):
         self.table_view.setModel(proxy_table_model)
 
         # Done
-        self.statusBar().showMessage("Finished loading USFM.", 5000)
+        self.update_status_bar("Finished loading USFM.")
 
     def on_filter_changed(self, text: str) -> None:
         """When the user changes the word filter."""
@@ -219,19 +219,26 @@ class MainWindow(QMainWindow):
             html_refs.append(text)
         self.references.setHtml("".join(html_refs))
 
-    def on_progress_update(self, percent_complete:int, message: str) -> None:
+    def on_worker_progress_update(self, percent_complete:int, message: str) -> None:
         """Updates status bar with progress. """
         self.update_status_bar(f"{message} ({percent_complete}%)")
 
+    def on_worker_error(self, error: Tuple[Any, Any, Any]) -> None:
+        """Updates status bar with error. """
+        logging.error(error[1])
+        self.update_status_bar(f"Error: {error[1]}")
+
     def update_status_bar(self, message: str) -> None:
         """Updates status bar.  Only call on main thread!"""
-        self.statusBar().showMessage(message, 5000)
+        logging.debug(message)
+        self.statusBar().showMessage(message, 10000)
 
     def on_push_changes_clicked(self) -> None:
         """Push changes to server."""
         # Launch worker
         worker = Worker(self.worker_push_to_server, self.path)
-        worker.signals.progress.connect(self.on_progress_update)
+        worker.signals.progress.connect(self.on_worker_progress_update)
+        worker.signals.error.connect(self.on_worker_error)
         self.threadpool.start(worker)
 
     def worker_parse_usfm(self, *args: Any, **kwargs: Any) -> dict[str, WordEntry]:
@@ -249,28 +256,19 @@ class MainWindow(QMainWindow):
             command, capture_output=True, text=True, cwd=repo_dir, check=True
         )
         logging.debug("%s: rc=%d", " ".join(command), result.returncode)
-        if result.returncode != 0:
-            logging.warning("Return code %i: %s", result.returncode, str(command))
-            raise RuntimeError(f"Error calling git: return code {result.returncode}")
 
         progress_callback.emit(30, "Creating commit...")
         command = ["git", "commit", "-m", "Correct spelling"]
-        logging.debug("%s: rc=%d", " ".join(command), result.returncode)
         result = subprocess.run(
             command, capture_output=True, text=True, cwd=repo_dir, check=True
         )
-        if result.returncode != 0:
-            logging.warning("Return code %i: %s", result.returncode, str(command))
-            raise RuntimeError(f"Error calling git: return code {result.returncode}")
+        logging.debug("%s: rc=%d", " ".join(command), result.returncode)
 
         progress_callback.emit(66, "Pushing files...")
         command = ["git", "push"]
-        logging.debug("%s: rc=%d", " ".join(command), result.returncode)
         result = subprocess.run(
             command, capture_output=True, text=True, cwd=repo_dir, check=True
         )
-        if result.returncode != 0:
-            logging.warning("Return code %i: %s", result.returncode, str(command))
-            raise RuntimeError(f"Error calling git: return code {result.returncode}")
+        logging.debug("%s: rc=%d", " ".join(command), result.returncode)
         
         progress_callback.emit(100, "Done pushing to server.")
