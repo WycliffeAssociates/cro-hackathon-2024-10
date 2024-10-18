@@ -35,7 +35,8 @@ from PySide6.QtCore import (
 
 # Project imports
 from analyzer import WordEntry
-from dictionary_table_model import DictionaryTableModel, FilterProxyModel
+from dictionary_table_model import DictionaryTableModel
+from filter_proxy_model import FilterProxyModel
 import analyzer
 
 

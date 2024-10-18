@@ -9,7 +9,6 @@ from PySide6.QtCore import (
     QAbstractTableModel,
     QModelIndex,
     QPersistentModelIndex,
-    QSortFilterProxyModel,
 )
 
 # Project imports
@@ -63,25 +62,3 @@ class DictionaryTableModel(QAbstractTableModel):
                 return self.columns[section]
             return str(section)
         return None
-
-
-class FilterProxyModel(QSortFilterProxyModel):
-    """Model for filtering the table"""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.filter_text = ""
-
-    def set_filter_text(self, text: str) -> None:
-        """Set the filter text"""
-        self.filter_text = text.lower()
-        self.invalidateFilter()  # Triggers the filter to be reapplied
-
-    # Override the filterAcceptsRow method to filter based on column 1
-    def filterAcceptsRow(
-        self, source_row: int, source_parent: QModelIndex | QPersistentModelIndex
-    ) -> bool:
-        """Filter out rows that don't match filter"""
-        index = self.sourceModel().index(source_row, 0, source_parent)  # Column 1
-        column_text = str(self.sourceModel().data(index)).lower()
-        return self.filter_text in column_text
