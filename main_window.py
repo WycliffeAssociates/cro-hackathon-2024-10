@@ -4,7 +4,7 @@
 from pathlib import Path
 import logging
 import subprocess
-from typing import cast, Callable, Optional, Any, Tuple
+from typing import cast, Any, Tuple
 
 # Third party imports
 from PySide6.QtWidgets import (
@@ -27,9 +27,6 @@ from PySide6.QtGui import QIcon
 from PySide6.QtCore import (
     Qt,
     QModelIndex,
-    QObject,
-    Signal,
-    QRunnable,
     QThreadPool,
 )
 
@@ -39,6 +36,7 @@ from dictionary_table_model import DictionaryTableModel
 from filter_proxy_model import FilterProxyModel
 import analyzer
 from worker import Worker
+
 
 class MainWindow(QMainWindow):
     """Main Window"""
@@ -219,12 +217,12 @@ class MainWindow(QMainWindow):
             html_refs.append(text)
         self.references.setHtml("".join(html_refs))
 
-    def on_worker_progress_update(self, percent_complete:int, message: str) -> None:
-        """Updates status bar with progress. """
+    def on_worker_progress_update(self, percent_complete: int, message: str) -> None:
+        """Updates status bar with progress."""
         self.update_status_bar(f"{message} ({percent_complete}%)")
 
     def on_worker_error(self, error: Tuple[Any, Any, Any]) -> None:
-        """Updates status bar with error. """
+        """Updates status bar with error."""
         logging.error(error[1])
         self.update_status_bar(f"Error: {error[1]}")
 
@@ -234,7 +232,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(message, 10000)
 
     def on_push_changes_clicked(self) -> None:
-        """Push changes to server."""
+        """Click: Push changes to server."""
         # Launch worker
         worker = Worker(self.worker_push_to_server, self.path)
         worker.signals.progress.connect(self.on_worker_progress_update)
@@ -242,10 +240,13 @@ class MainWindow(QMainWindow):
         self.threadpool.start(worker)
 
     def worker_parse_usfm(self, *args: Any, **kwargs: Any) -> dict[str, WordEntry]:
+        # pylint: disable=unused-argument
         """Analyze USFM."""
         return analyzer.process_file_or_dir(self.path)
 
     def worker_push_to_server(self, *args: Any, **kwargs: Any) -> None:
+        # pylint: disable=unused-argument
+        """ Push changes to the server. """
 
         repo_dir = str(self.path)
         progress_callback = kwargs["progress_callback"]
@@ -270,5 +271,5 @@ class MainWindow(QMainWindow):
             command, capture_output=True, text=True, cwd=repo_dir, check=True
         )
         logging.debug("%s: rc=%d", " ".join(command), result.returncode)
-        
+
         progress_callback.emit(100, "Done pushing to server.")

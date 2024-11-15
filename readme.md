@@ -2,5 +2,5 @@
 
 ## To Do
 
-- [ ] Don't use local git client, use something like gitlib instead.
-- [ ] Don't use sed to make changes to files, do it within the app.
+-   [ ] Don't use local git client, use something like gitlib instead.
+-   [ ] Don't use sed to make changes to files, do it within the app.

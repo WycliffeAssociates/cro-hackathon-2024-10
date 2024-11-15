@@ -14,8 +14,6 @@ from PySide6.QtCore import QRunnable, Slot, Signal, QObject
 # Project imporsts
 
 
-
-
 class WorkerSignals(QObject):
     """
     Defines the signals available from a running worker thread.
@@ -78,7 +76,7 @@ class Worker(QRunnable):
         # Retrieve args/kwargs here; and fire processing using them
         try:
             result = self.fn(*self.args, **self.kwargs)
-        except: # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
