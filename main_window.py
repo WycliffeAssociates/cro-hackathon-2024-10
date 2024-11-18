@@ -4,10 +4,10 @@
 from pathlib import Path
 import logging
 import subprocess
-from pygit2 import Repository
 from typing import cast, Any, Tuple
 
 # Third party imports
+from pygit2 import Repository, Signature
 from PySide6.QtWidgets import (
     QFileDialog,
     QInputDialog,
@@ -247,9 +247,9 @@ class MainWindow(QMainWindow):
 
     def worker_push_to_server(self, *args: Any, **kwargs: Any) -> None:
         # pylint: disable=unused-argument
-        """ Push changes to the server. """
+        """Push changes to the server."""
 
-        # Setup 
+        # Setup
         progress_callback = kwargs["progress_callback"]
         repo_dir = str(self.path)
         repo = Repository(repo_dir)
@@ -260,16 +260,23 @@ class MainWindow(QMainWindow):
         index.add_all()
         index.write()
 
+        # Commit files
         progress_callback.emit(30, "Creating commit...")
-        # tree = index.write_tree()
-        
-
-        # progress_callback.emit(30, "Creating commit...")
-        # command = ["git", "commit", "-m", "Correct spelling"]
-        # result = subprocess.run(
-        #     command, capture_output=True, text=True, cwd=repo_dir, check=True
-        # )
-        # logging.debug("%s: rc=%d", " ".join(command), result.returncode)
+        tree_oid = index.write_tree()
+        head_ref = repo.head
+        parent_commit = repo[head_ref.target]
+        parents = [parent_commit.id]
+        author = Signature("Unknown", "unknown@example.com")
+        committer = author
+        message = "Correct spelling"
+        commit_oid = repo.create_commit(
+            "HEAD",
+            author,
+            committer,
+            message,
+            tree_oid,
+            parents
+        )
 
         # progress_callback.emit(66, "Pushing files...")
         # command = ["git", "push"]
