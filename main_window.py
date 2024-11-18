@@ -266,6 +266,7 @@ class MainWindow(QMainWindow):
         head_ref = repo.head
         parent_commit = repo[head_ref.target]
         parents = [parent_commit.id]
+        # TODO: Collect user name and email from config
         author = Signature("Unknown", "unknown@example.com")
         committer = author
         message = "Correct spelling"
@@ -278,6 +279,8 @@ class MainWindow(QMainWindow):
             parents
         )
 
+        # TODO: Collect WACS user id from config
+        # TODO: Prompt user for WACS password, cache in RAM
         # progress_callback.emit(66, "Pushing files...")
         # command = ["git", "push"]
         # result = subprocess.run(
