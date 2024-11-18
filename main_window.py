@@ -4,6 +4,7 @@
 from pathlib import Path
 import logging
 import subprocess
+from pygit2 import Repository
 from typing import cast, Any, Tuple
 
 # Third party imports
@@ -248,28 +249,33 @@ class MainWindow(QMainWindow):
         # pylint: disable=unused-argument
         """ Push changes to the server. """
 
-        repo_dir = str(self.path)
+        # Setup 
         progress_callback = kwargs["progress_callback"]
+        repo_dir = str(self.path)
+        repo = Repository(repo_dir)
 
+        # Stage files
         progress_callback.emit(0, "Staging files...")
-        command = ["git", "add", "--all"]
-        result = subprocess.run(
-            command, capture_output=True, text=True, cwd=repo_dir, check=True
-        )
-        logging.debug("%s: rc=%d", " ".join(command), result.returncode)
+        index = repo.index
+        index.add_all()
+        index.write()
 
         progress_callback.emit(30, "Creating commit...")
-        command = ["git", "commit", "-m", "Correct spelling"]
-        result = subprocess.run(
-            command, capture_output=True, text=True, cwd=repo_dir, check=True
-        )
-        logging.debug("%s: rc=%d", " ".join(command), result.returncode)
+        # tree = index.write_tree()
+        
 
-        progress_callback.emit(66, "Pushing files...")
-        command = ["git", "push"]
-        result = subprocess.run(
-            command, capture_output=True, text=True, cwd=repo_dir, check=True
-        )
-        logging.debug("%s: rc=%d", " ".join(command), result.returncode)
+        # progress_callback.emit(30, "Creating commit...")
+        # command = ["git", "commit", "-m", "Correct spelling"]
+        # result = subprocess.run(
+        #     command, capture_output=True, text=True, cwd=repo_dir, check=True
+        # )
+        # logging.debug("%s: rc=%d", " ".join(command), result.returncode)
+
+        # progress_callback.emit(66, "Pushing files...")
+        # command = ["git", "push"]
+        # result = subprocess.run(
+        #     command, capture_output=True, text=True, cwd=repo_dir, check=True
+        # )
+        # logging.debug("%s: rc=%d", " ".join(command), result.returncode)
 
         progress_callback.emit(100, "Done pushing to server.")
