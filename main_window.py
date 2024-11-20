@@ -7,7 +7,7 @@ import subprocess
 from typing import cast, Any, Tuple
 
 # Third party imports
-from pygit2 import Repository, Signature
+from pygit2 import Repository, Signature, Oid # pylint: disable=no-name-in-module
 from PySide6.QtWidgets import (
     QFileDialog,
     QInputDialog,
@@ -265,18 +265,13 @@ class MainWindow(QMainWindow):
         tree_oid = index.write_tree()
         head_ref = repo.head
         parent_commit = repo[head_ref.target]
-        parents = [parent_commit.id]
+        parents: list[str | Oid] = [parent_commit.id]
         # TODO: Collect user name and email from config
         author = Signature("Unknown", "unknown@example.com")
         committer = author
         message = "Correct spelling"
         commit_oid = repo.create_commit(
-            "HEAD",
-            author,
-            committer,
-            message,
-            tree_oid,
-            parents
+            "HEAD", author, committer, message, tree_oid, parents
         )
 
         # TODO: Collect WACS user id from config
