@@ -1,3 +1,6 @@
+# Project files
+settings.json
+
 # Python files
 __pycache__/
 build/

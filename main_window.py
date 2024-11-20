@@ -7,7 +7,7 @@ import subprocess
 from typing import cast, Any, Tuple
 
 # Third party imports
-from pygit2 import Repository, Signature, Oid # pylint: disable=no-name-in-module
+from pygit2 import Repository, Signature, Oid  # pylint: disable=no-name-in-module
 from PySide6.QtWidgets import (
     QFileDialog,
     QInputDialog,
@@ -37,16 +37,22 @@ from dictionary_table_model import DictionaryTableModel
 from filter_proxy_model import FilterProxyModel
 import analyzer
 from worker import Worker
+from settings import Settings
 
 
 class MainWindow(QMainWindow):
     """Main Window"""
 
-    def __init__(self) -> None:
+    def __init__(self, app_settings: Settings) -> None:
         """Initialize main window."""
         super().__init__()
+
         self.setWindowTitle("Spell Checking App")
         self.setWindowIcon(QIcon("icon.png"))
+
+        # Settings
+        self.settings = app_settings
+        self.wacs_password = ""
 
         # Threading
         self.threadpool = QThreadPool()
@@ -234,6 +240,55 @@ class MainWindow(QMainWindow):
 
     def on_push_changes_clicked(self) -> None:
         """Click: Push changes to server."""
+
+        # Verify git user name
+        if not self.settings.user_name:
+            text, ok = QInputDialog.getText(
+                None,
+                "Enter Name",
+                "Please enter a name for the Git commit, e.g. 'John Doe':"
+            )
+            if ok and text:
+                self.settings.user_name = text
+
+        # Verify git email address
+        if not self.settings.email:
+            text, ok = QInputDialog.getText(
+                None,
+                "Enter Email",
+                "Please enter an email address for the Git commit, e.g. 'john@example.org':"
+            )
+            if ok and text:
+                self.settings.email = text
+
+
+        # Verify WACS username
+        if not self.settings.wacs_user_id:
+            text, ok = QInputDialog.getText(
+                None,
+                "Enter WACS user id",
+                "Please enter your user ID for WACS e.g. 'johnd':"
+            )
+            if ok and text:
+                self.settings.wacs_user_id = text
+
+        # Ask for WACS password
+        if not self.wacs_password:
+            text, ok = QInputDialog.getText(
+                None,
+                "Enter WACS password",
+                "Please enter your password for WACS. (This is not saved anywhere.)"
+            )
+            if ok and text:
+                self.wacs_password = text
+
+        # Abort if no password
+        if not self.wacs_password:
+            message = "Could not push to WACS: need password"
+            logging.error(message)
+            self.update_status_bar(message)
+            return
+
         # Launch worker
         worker = Worker(self.worker_push_to_server, self.path)
         worker.signals.progress.connect(self.on_worker_progress_update)
@@ -266,8 +321,7 @@ class MainWindow(QMainWindow):
         head_ref = repo.head
         parent_commit = repo[head_ref.target]
         parents: list[str | Oid] = [parent_commit.id]
-        # TODO: Collect user name and email from config
-        author = Signature("Unknown", "unknown@example.com")
+        author = Signature(self.settings.user_name, self.settings.email)
         committer = author
         message = "Correct spelling"
         commit_oid = repo.create_commit(

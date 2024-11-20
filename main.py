@@ -12,6 +12,10 @@ from PySide6.QtWidgets import (
 
 # Project imports
 from main_window import MainWindow
+import settings
+
+
+
 
 
 def parse_args() -> Namespace:  # pragma: no cover
@@ -51,10 +55,12 @@ def main() -> None:  # pragma: no cover
     args = parse_args()
     setup_logging(args.trace)
 
+    app_settings = settings.load_settings()
     app = QApplication(sys.argv)
-    window = MainWindow()
+    window = MainWindow(app_settings)
     window.show()
     app.exec()
+    settings.save_settings(app_settings)
 
 
 if __name__ == "__main__":  # pragma: no cover
