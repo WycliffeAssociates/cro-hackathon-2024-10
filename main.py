@@ -1,4 +1,4 @@
-""" TODO: Purpose of this program """
+""" Tool for checking spelling of USFM files """
 
 # Standard imports
 from argparse import ArgumentParser, Namespace
@@ -15,12 +15,11 @@ from main_window import MainWindow
 import settings
 
 
-
-
-
 def parse_args() -> Namespace:  # pragma: no cover
     """Parse command line arguments"""
-    parser = ArgumentParser(description="TODO: Description of this script")
+    parser = ArgumentParser(
+        description="App to check the spelling of directories of USFM files"
+    )
     parser.add_argument("--trace", action="store_true", help="Enable tracing output")
     return parser.parse_args()
 

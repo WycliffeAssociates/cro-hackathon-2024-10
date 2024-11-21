@@ -7,7 +7,9 @@ import subprocess
 from typing import cast, Any, Tuple
 
 # Third party imports
-from pygit2 import Repository, Signature, Oid  # pylint: disable=no-name-in-module
+from pygit2 import (
+    Repository, Signature, Oid, RemoteCallbacks, UserPass, GitError
+)
 from PySide6.QtWidgets import (
     QFileDialog,
     QInputDialog,
@@ -244,9 +246,9 @@ class MainWindow(QMainWindow):
         # Verify git user name
         if not self.settings.user_name:
             text, ok = QInputDialog.getText(
-                None,
+                self,
                 "Enter Name",
-                "Please enter a name for the Git commit, e.g. 'John Doe':"
+                "Please enter a name for the Git commit, e.g. 'John Doe':",
             )
             if ok and text:
                 self.settings.user_name = text
@@ -254,20 +256,19 @@ class MainWindow(QMainWindow):
         # Verify git email address
         if not self.settings.email:
             text, ok = QInputDialog.getText(
-                None,
+                self,
                 "Enter Email",
-                "Please enter an email address for the Git commit, e.g. 'john@example.org':"
+                "Please enter an email address for the Git commit, e.g. 'john@example.org':",
             )
             if ok and text:
                 self.settings.email = text
 
-
         # Verify WACS username
         if not self.settings.wacs_user_id:
             text, ok = QInputDialog.getText(
-                None,
+                self,
                 "Enter WACS user id",
-                "Please enter your user ID for WACS e.g. 'johnd':"
+                "Please enter your user ID for WACS e.g. 'johnd':",
             )
             if ok and text:
                 self.settings.wacs_user_id = text
@@ -275,9 +276,10 @@ class MainWindow(QMainWindow):
         # Ask for WACS password
         if not self.wacs_password:
             text, ok = QInputDialog.getText(
-                None,
+                self,
                 "Enter WACS password",
-                "Please enter your password for WACS. (This is not saved anywhere.)"
+                "Please enter your password for WACS. (This is not saved anywhere.)",
+                echo=QLineEdit.EchoMode.Password,
             )
             if ok and text:
                 self.wacs_password = text
@@ -328,6 +330,32 @@ class MainWindow(QMainWindow):
             "HEAD", author, committer, message, tree_oid, parents
         )
 
+        # Push files to server
+        remote_name = "origin"
+        branch_name = "main"
+        if remote_name not in repo.remotes:
+            message = f"ERROR: Could not find {remote_name} in repo remotes."
+            progress_callback.emit(100, message)
+            logging.error(message)
+            return
+        remote = repo.remotes[remote_name]
+        callbacks = RemoteCallbacks(
+            credentials=UserPass(self.settings.wacs_user_id, self.wacs_password)
+        )
+        try:
+            remote.push(
+                [f"refs/heads/{branch_name}:refs/heads/{branch_name}"],
+                callbacks=callbacks
+            )
+            logging.info(f"Successfully pushed {branch_name} to {remote_name}.")
+            progress_callback.emit(100, "Done pushing to server.")
+        except GitError as git_error:
+            message = f"ERROR: Failed to push to remote: {git_error}"
+            logging.error(message)
+            progress_callback.emit(100, message)
+
+
+
         # TODO: Collect WACS user id from config
         # TODO: Prompt user for WACS password, cache in RAM
         # progress_callback.emit(66, "Pushing files...")
@@ -337,4 +365,3 @@ class MainWindow(QMainWindow):
         # )
         # logging.debug("%s: rc=%d", " ".join(command), result.returncode)
 
-        progress_callback.emit(100, "Done pushing to server.")
