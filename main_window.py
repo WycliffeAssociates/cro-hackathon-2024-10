@@ -7,9 +7,7 @@ import subprocess
 from typing import cast, Any, Tuple
 
 # Third party imports
-from pygit2 import (
-    Repository, Signature, Oid, RemoteCallbacks, UserPass, GitError
-)
+from pygit2 import Repository, Signature, Oid, RemoteCallbacks, UserPass, GitError
 from PySide6.QtWidgets import (
     QFileDialog,
     QInputDialog,
@@ -345,7 +343,7 @@ class MainWindow(QMainWindow):
         try:
             remote.push(
                 [f"refs/heads/{branch_name}:refs/heads/{branch_name}"],
-                callbacks=callbacks
+                callbacks=callbacks,
             )
             logging.info(f"Successfully pushed {branch_name} to {remote_name}.")
             progress_callback.emit(100, "Done pushing to server.")
@@ -353,8 +351,6 @@ class MainWindow(QMainWindow):
             message = f"ERROR: Failed to push to remote: {git_error}"
             logging.error(message)
             progress_callback.emit(100, message)
-
-
 
         # TODO: Collect WACS user id from config
         # TODO: Prompt user for WACS password, cache in RAM
@@ -364,4 +360,3 @@ class MainWindow(QMainWindow):
         #     command, capture_output=True, text=True, cwd=repo_dir, check=True
         # )
         # logging.debug("%s: rc=%d", " ".join(command), result.returncode)
-
