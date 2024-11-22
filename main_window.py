@@ -316,7 +316,7 @@ class MainWindow(QMainWindow):
         index.write()
 
         # Commit files
-        progress_callback.emit(30, "Creating commit...")
+        progress_callback.emit(33, "Creating commit...")
         tree_oid = index.write_tree()
         head_ref = repo.head
         parent_commit = repo[head_ref.target]
@@ -329,13 +329,9 @@ class MainWindow(QMainWindow):
         )
 
         # Push files to server
+        progress_callback.emit(66, "Pushing files to server...")
         remote_name = "origin"
-        branch_name = "main"
-        # if remote_name not in repo.remotes:
-        #     message = f"ERROR: Could not find {remote_name} in repo remotes."
-        #     progress_callback.emit(100, message)
-        #     logging.error(message)
-        #     return
+        branch_name = "master"
         remote = repo.remotes[remote_name]
         callbacks = RemoteCallbacks(
             credentials=UserPass(self.settings.wacs_user_id, self.wacs_password)
@@ -351,12 +347,3 @@ class MainWindow(QMainWindow):
             message = f"ERROR: Failed to push to remote: {git_error}"
             logging.error(message)
             progress_callback.emit(100, message)
-
-        # TODO: Collect WACS user id from config
-        # TODO: Prompt user for WACS password, cache in RAM
-        # progress_callback.emit(66, "Pushing files...")
-        # command = ["git", "push"]
-        # result = subprocess.run(
-        #     command, capture_output=True, text=True, cwd=repo_dir, check=True
-        # )
-        # logging.debug("%s: rc=%d", " ".join(command), result.returncode)
