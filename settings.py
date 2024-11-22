@@ -15,6 +15,7 @@ class Settings:
     user_name: str = ""
     email: str = ""
     wacs_user_id: str = ""
+    repo_dir: str = ""
 
 
 def load_settings() -> Settings:

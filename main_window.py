@@ -58,7 +58,7 @@ class MainWindow(QMainWindow):
         self.threadpool = QThreadPool()
 
         # Data
-        self.path = Path("/home/oliverc/repos/en_ulb_craig")
+        self.path = Path(self.settings.repo_dir)
         self.word_entries: dict[str, analyzer.WordEntry] = {}
 
         # Load USFM button
@@ -135,6 +135,7 @@ class MainWindow(QMainWindow):
             return
 
         self.path = Path(directory)
+        self.settings.repo_dir = directory
 
         # Launch worker
         worker = Worker(self.worker_parse_usfm, self.path)
