@@ -331,11 +331,11 @@ class MainWindow(QMainWindow):
         # Push files to server
         remote_name = "origin"
         branch_name = "main"
-        if remote_name not in repo.remotes:
-            message = f"ERROR: Could not find {remote_name} in repo remotes."
-            progress_callback.emit(100, message)
-            logging.error(message)
-            return
+        # if remote_name not in repo.remotes:
+        #     message = f"ERROR: Could not find {remote_name} in repo remotes."
+        #     progress_callback.emit(100, message)
+        #     logging.error(message)
+        #     return
         remote = repo.remotes[remote_name]
         callbacks = RemoteCallbacks(
             credentials=UserPass(self.settings.wacs_user_id, self.wacs_password)
@@ -345,7 +345,7 @@ class MainWindow(QMainWindow):
                 [f"refs/heads/{branch_name}:refs/heads/{branch_name}"],
                 callbacks=callbacks,
             )
-            logging.info(f"Successfully pushed {branch_name} to {remote_name}.")
+            logging.info("Successfully pushed %s to %s.", branch_name, remote_name)
             progress_callback.emit(100, "Done pushing to server.")
         except GitError as git_error:
             message = f"ERROR: Failed to push to remote: {git_error}"
