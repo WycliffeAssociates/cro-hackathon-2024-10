@@ -1,13 +1,27 @@
 """ Main window of app """
 
+#
 # Standard imports
+#
+
 from pathlib import Path
 import logging
 import subprocess
 from typing import cast, Any, Tuple
 
+#
 # Third party imports
-from pygit2 import Repository, Signature, Oid, RemoteCallbacks, UserPass, GitError
+#
+
+# pylint: disable=no-name-in-module
+from pygit2 import (
+    Repository,
+    Signature,
+    Oid,
+    RemoteCallbacks,
+    UserPass,
+    GitError,
+)
 from PySide6.QtWidgets import (
     QFileDialog,
     QInputDialog,
@@ -31,7 +45,10 @@ from PySide6.QtCore import (
     QThreadPool,
 )
 
+#
 # Project imports
+#
+
 from analyzer import WordEntry
 from dictionary_table_model import DictionaryTableModel
 from filter_proxy_model import FilterProxyModel
@@ -41,6 +58,7 @@ from settings import Settings
 
 
 class MainWindow(QMainWindow):
+    # pylint: disable=too-many-instance-attributes, too-many-locals
     """Main Window"""
 
     def __init__(self, app_settings: Settings) -> None:
@@ -325,9 +343,7 @@ class MainWindow(QMainWindow):
         author = Signature(self.settings.user_name, self.settings.email)
         committer = author
         message = "Correct spelling"
-        commit_oid = repo.create_commit(
-            "HEAD", author, committer, message, tree_oid, parents
-        )
+        repo.create_commit("HEAD", author, committer, message, tree_oid, parents)
 
         # Push files to server
         progress_callback.emit(66, "Pushing files to server...")
