@@ -2,6 +2,7 @@
 
 # Standard imports
 from argparse import ArgumentParser, Namespace
+import multiprocessing
 import logging
 import sys
 
@@ -63,4 +64,5 @@ def main() -> None:  # pragma: no cover
 
 
 if __name__ == "__main__":  # pragma: no cover
+    multiprocessing.freeze_support()
     main()
