@@ -6,7 +6,6 @@
 
 from pathlib import Path
 import logging
-import subprocess
 from typing import cast, Any, Tuple
 
 #
@@ -213,21 +212,45 @@ class MainWindow(QMainWindow):
         )
         if not ok or not corrected_spelling:
             return
+
+        # Launch worker
+        worker = Worker(
+            self.worker_fix_spelling, word=word, corrected_spelling=corrected_spelling
+        )
+        worker.signals.progress.connect(self.on_worker_progress_update)
+        worker.signals.error.connect(self.on_worker_error)
+        self.threadpool.start(worker)
+
+    def worker_fix_spelling(self, *args: Any, **kwargs: Any) -> None:
+        # pylint: disable=unused-argument
+        """Correct spelling in USFM files."""
+
+        # Setup
+        progress_callback = kwargs["progress_callback"]
+        word: str = kwargs["word"]
+        corrected_spelling: str = kwargs["corrected_spelling"]
+        logging.debug("Correcting spelling of %s to %s...", word, corrected_spelling)
+
+        # Get refs for word
         word_entry = self.word_entries[word]
+        if not word_entry:
+            message = f"ERROR: Couldn't find word entry for {word}!"
+            logging.error(message)
+            progress_callback.emit(100, message)
+            return
+
+        # Correct refs
+        refs_corrected = 0.0
         for ref in word_entry.refs:
-            command = [
-                "sed",
-                "-i",
-                f"s/{word}/{corrected_spelling}/g",
-                str(ref.file_path),
-            ]
-            result = subprocess.run(command, capture_output=True, text=True, check=True)
-            if result.returncode != 0:
-                logging.warning("Return code %i: %s", result.returncode, str(command))
-                return
-            logging.debug("Success: %s", str(command))
-            ref.text = ref.text.replace(word, corrected_spelling)
-        self.build_refs(word_entry)
+            uncorrected_text = ref.file_path.read_text()
+            corrected_text = uncorrected_text.replace(word, corrected_spelling)
+            with open(ref.file_path, "w", encoding="utf-8") as file:
+                file.write(corrected_text)
+                refs_corrected += 1.0
+                percent_done = int(refs_corrected / len(word_entry.refs) * 100)
+                message = f"Corrected {ref.file_path.name}"
+                logging.debug(message)
+                progress_callback.emit(percent_done, message)
 
     def build_refs(self, word_entry: WordEntry) -> None:
         """Build HTML reference text display."""

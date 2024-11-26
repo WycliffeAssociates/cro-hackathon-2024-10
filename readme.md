@@ -2,12 +2,12 @@
 
 ## To Do
 
--   [ ] Don't use sed to make changes to files, do it within the app.
+-   [ ] Debug why it hangs on directory load sometimes
 
 ## Someday/Maybe
 
 -   [ ] Show an hourglass or something when waiting for things.
--   [ ] Support using ssh keys, e.g. id_rsa
+-   [ ] Support using ssh keys, e.g. id_rsa, if someone asks for it
 
 ## Done
 
@@ -17,3 +17,4 @@
     -   [x] Add files to staging.
     -   [x] Commit staged files.
     -   [x] Push files to server.
+-   [x] Don't use sed to make changes to files, do it within the app.
