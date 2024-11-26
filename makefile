@@ -77,7 +77,7 @@ lint-test-watch:
 .PHONY: build
 build: .venv
 	. .venv/bin/activate \
-	&& pyinstaller --noconfirm --onedir main.py
+	&& pyinstaller --hidden-import=_cffi_backend --noconfirm --onedir main.py
 
 
 #
