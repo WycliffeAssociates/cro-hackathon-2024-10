@@ -230,7 +230,6 @@ class MainWindow(QMainWindow):
         worker.signals.error.connect(self.on_worker_error)
         self.threadpool.start(worker)
 
-
     def worker_fix_spelling(self, *args: Any, **kwargs: Any) -> None:
         # pylint: disable=unused-argument
         """Correct spelling in USFM files."""
@@ -249,15 +248,28 @@ class MainWindow(QMainWindow):
             progress_callback.emit(100, message)
             return
 
-        # Correct USFM files
-        refs_corrected = 0.0
+        # Count files to be corrected
+        files_to_be_corrected = []
         for ref in word_entry.refs:
+            # Don't correct the same file more than once
+            if ref.file_path in files_to_be_corrected:
+                continue
+            files_to_be_corrected.append(ref.file_path)
+
+        # Correct USFM files
+        files_corrected = []
+        for ref in word_entry.refs:
+            # Don't correct the same file more than once
+            if ref.file_path in files_corrected:
+                continue
+            files_corrected.append(ref.file_path)
             uncorrected_text = ref.file_path.read_text()
             corrected_text = uncorrected_text.replace(word, corrected_spelling)
             with open(ref.file_path, "w", encoding="utf-8") as file:
                 file.write(corrected_text)
-                refs_corrected += 1.0
-                percent_done = int(refs_corrected / len(word_entry.refs) * 100)
+                percent_done = int(
+                    float(len(files_corrected)) / float(len(files_to_be_corrected)) * 100.0
+                )
                 message = f"Corrected {ref.file_path.name}"
                 logging.debug(message)
                 progress_callback.emit(percent_done, message)
