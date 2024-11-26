@@ -143,12 +143,15 @@ class MainWindow(QMainWindow):
         """Load a USFM file or directory."""
 
         # Ask user for directory
-        directory = QFileDialog.getExistingDirectory(
-            self, "Select USFM Directory", dir=str(self.path)
-        )
-
-        # Abort if canceled
-        if not directory:
+        # directory = QFileDialog.getExistingDirectory(
+        #     self, "Select USFM Directory", dir=str(self.path)
+        # )
+        dialog = QFileDialog(self, "Select USFM Directory", str(self.path))
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
+        dialog.setOption(QFileDialog.Option.DontUseNativeDialog, True)  # Optional
+        if dialog.exec():
+            directory = dialog.selectedFiles()[0]
+        else:
             return
 
         self.path = Path(directory)
@@ -213,13 +216,20 @@ class MainWindow(QMainWindow):
         if not ok or not corrected_spelling:
             return
 
-        # Launch worker
+        # Fix in UI
+        word_entry = self.word_entries[word]
+        for ref in word_entry.refs:
+            ref.text = ref.text.replace(word, corrected_spelling)
+        self.build_refs(word_entry)
+
+        # Launch worker to fix USFM files
         worker = Worker(
             self.worker_fix_spelling, word=word, corrected_spelling=corrected_spelling
         )
         worker.signals.progress.connect(self.on_worker_progress_update)
         worker.signals.error.connect(self.on_worker_error)
         self.threadpool.start(worker)
+
 
     def worker_fix_spelling(self, *args: Any, **kwargs: Any) -> None:
         # pylint: disable=unused-argument
@@ -239,7 +249,7 @@ class MainWindow(QMainWindow):
             progress_callback.emit(100, message)
             return
 
-        # Correct refs
+        # Correct USFM files
         refs_corrected = 0.0
         for ref in word_entry.refs:
             uncorrected_text = ref.file_path.read_text()
