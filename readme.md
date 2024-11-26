@@ -2,10 +2,10 @@
 
 ## To Do
 
--   [ ] Debug why it hangs on directory load sometimes
 
 ## Someday/Maybe
 
+-   [ ] Possible edge case -- small words like "the" can affect words like "them"
 -   [ ] Show an hourglass or something when waiting for things.
 -   [ ] Support using ssh keys, e.g. id_rsa, if someone asks for it
 
@@ -18,3 +18,5 @@
     -   [x] Commit staged files.
     -   [x] Push files to server.
 -   [x] Don't use sed to make changes to files, do it within the app.
+-   [x] Debug why it hangs on directory load sometimes
+-   [x] Update display with corrected word
