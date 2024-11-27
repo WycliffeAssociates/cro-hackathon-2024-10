@@ -44,9 +44,9 @@ personal account you won't have the rights to push changes to it later.
 
 1.  Click "Push changes."
 2.  The app may request some information from you:
-    -   Git commit name, e.g. "John Doe"
-    -   Git email address, e.g. "john@example.org"
-    -   WACS user id, e.g. "johnd"
+    -   Git commit name, e.g. "John Doe"
+    -   Git email address, e.g. "john@example.org"
+    -   WACS user id, e.g. "johnd"
     -   WACS password. (The app will remember your password while it's
         running, but does not store it anywhere between runs.)
 3.  The app will update as it pushes the files to WACS. If there is an
@@ -63,7 +63,7 @@ That's it -- have fun, and thank you for testing this app!
 -   [ ] Possible edge case -- correcting the spelling of small words
         like "the" can affect words like "them"
 -   [ ] Show an hourglass or something when waiting for things.
--   [ ] Support using ssh keys, e.g. id_rsa, if someone asks for it
+-   [ ] Support using ssh keys, e.g. id_rsa, if someone asks for it
 
 ## Done
 
