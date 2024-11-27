@@ -263,7 +263,7 @@ class MainWindow(QMainWindow):
             if ref.file_path in files_corrected:
                 continue
             files_corrected.append(ref.file_path)
-            uncorrected_text = ref.file_path.read_text()
+            uncorrected_text = ref.file_path.read_text(encoding="utf-8")
             corrected_text = uncorrected_text.replace(word, corrected_spelling)
             with open(ref.file_path, "w", encoding="utf-8") as file:
                 file.write(corrected_text)
