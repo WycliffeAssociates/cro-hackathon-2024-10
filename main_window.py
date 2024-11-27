@@ -268,7 +268,9 @@ class MainWindow(QMainWindow):
             with open(ref.file_path, "w", encoding="utf-8") as file:
                 file.write(corrected_text)
                 percent_done = int(
-                    float(len(files_corrected)) / float(len(files_to_be_corrected)) * 100.0
+                    float(len(files_corrected))
+                    / float(len(files_to_be_corrected))
+                    * 100.0
                 )
                 message = f"Corrected {ref.file_path.name}"
                 logging.debug(message)
