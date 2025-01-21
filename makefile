@@ -28,7 +28,7 @@ mypy: .venv
 
 .PHONY: pylint
 pylint: .venv
-	. .venv/bin/activate && python3 -m pylint --output-format=colorized *.py tests/*.py
+	. .venv/bin/activate && python3 -m pylint --jobs 8 --output-format=colorized *.py tests/*.py
 
 .PHONY: lint
 lint: .venv mypy pylint
