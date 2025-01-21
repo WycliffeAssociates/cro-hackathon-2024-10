@@ -21,7 +21,7 @@ VERSE_REGEX = re.compile(r"^\\v (\d+) (.*)$")
 FOOTNOTE_REGEX = re.compile(r"\\f(.*?)\\f\*")
 USFM_MARKER_REGEX = re.compile(r"\\\w+(\d+)?")
 NUMBER_REGEX = re.compile(r"\d+")
-PUNCTUATION_REGEX = re.compile(r"""[\[\]*+?!()"',.:;—]+""")
+PUNCTUATION_REGEX = re.compile(r"""[\[\]*+?!()"',.:;—‘’“”]+""")
 
 
 @dataclass

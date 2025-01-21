@@ -1,5 +1,6 @@
 # Project files
 settings.json
+word_list.csv
 
 # Python files
 __pycache__/

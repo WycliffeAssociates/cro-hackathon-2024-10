@@ -116,6 +116,11 @@ class MainWindow(QMainWindow):
         push_changes_button = QPushButton("Push changes")
         push_changes_button.clicked.connect(self.on_push_changes_clicked)
 
+        # Export Word List button
+        self.export_wordlist_button = QPushButton("Export word list")
+        self.export_wordlist_button.setEnabled(False)
+        self.export_wordlist_button.clicked.connect(self.on_export_wordlist_clicked)
+
         # Create left pane layout
         left_pane_layout = QVBoxLayout()
         left_pane_layout.addWidget(self.load_usfm_button)
@@ -123,6 +128,7 @@ class MainWindow(QMainWindow):
         left_pane_layout.addWidget(self.table_view)
         left_pane_layout.addWidget(fix_spelling_button)
         left_pane_layout.addWidget(push_changes_button)
+        left_pane_layout.addWidget(self.export_wordlist_button)
 
         # Status bar
         self.setStatusBar(QStatusBar())
@@ -179,6 +185,9 @@ class MainWindow(QMainWindow):
         # Attach data model to table
         self.table_view.setModel(proxy_table_model)
 
+        # Enable export wordlist button
+        self.export_wordlist_button.setEnabled(True)
+
         # Done
         self.update_status_bar("Finished loading USFM.")
 
@@ -194,6 +203,14 @@ class MainWindow(QMainWindow):
         self.table_view.selectRow(row)
         word_entry = self.word_entries[word]
         self.build_refs(word_entry)
+
+    def on_export_wordlist_clicked(self) -> None:
+        """Export word list."""
+        # Launch worker
+        worker = Worker(self.worker_export_wordlist)
+        worker.signals.progress.connect(self.on_worker_progress_update)
+        worker.signals.error.connect(self.on_worker_error)
+        self.threadpool.start(worker)
 
     def on_fix_spelling_clicked(self) -> None:
         """Fix spelling of selected word."""
@@ -360,6 +377,19 @@ class MainWindow(QMainWindow):
         worker.signals.progress.connect(self.on_worker_progress_update)
         worker.signals.error.connect(self.on_worker_error)
         self.threadpool.start(worker)
+
+    def worker_export_wordlist(self, *args: Any, **kwargs: Any) -> None:
+        # pylint: disable=unused-argument
+        """Export word list to disk."""
+        progress_callback = kwargs["progress_callback"]
+        progress_callback.emit(0, "Exporting word list, please wait...")
+        filename = "word_list.csv"
+        with open(filename, "w", encoding="utf-8") as outfile:
+            outfile.write("Word,Count\n")
+            for word in sorted(self.word_entries.keys()):
+                word_entry = self.word_entries[word]
+                outfile.write(f"{word_entry.word},{len(word_entry.refs)}\n")
+        progress_callback.emit(100, f"Done. Word list exported to {filename}")
 
     def worker_parse_usfm(self, *args: Any, **kwargs: Any) -> dict[str, WordEntry]:
         # pylint: disable=unused-argument
